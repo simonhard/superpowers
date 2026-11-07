@@ -15,6 +15,7 @@ Live in `tests/`. Currently:
 - `tests/explicit-skill-requests/` — Haiku-specific, multi-turn, and skill-name-prompted tests exercising explicit skill invocation.
 - `tests/shell-lint/` — bash test wrapping `scripts/lint-shell.sh`.
 - `tests/diagnosing-superpowers/test-skill-structure.sh` — structural checks for the diagnosing-superpowers skill (frontmatter, referenced files, leak scan, word budget); behavior-scenario eval records are kept by the maintainer outside the repo.
+- `tests/mapping-architecture-delta/` — `test-skill-structure.sh` (frontmatter, word budget, referenced files, template placeholders, leak scan) and `test-classify-diff.sh` (throwaway git repo exercising `scripts/classify-diff.sh`: add, modify, delete, rename, non-ASCII path, unmapped paths, no map file, exit codes).
 
 Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.
 
