@@ -139,7 +139,7 @@ your path and complete them in order.
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
 6. **Write design doc** — the spec ends with an **Architecture Delta** section drawn with the mapping-architecture-delta skill (planned mode); save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope, delta check (see below)
-8. **User reviews written spec** — the architecture delta is on screen; ask your human partner to review the spec file and the map before proceeding
+8. **User reviews written spec** — the architecture delta is on screen (or, without a display, in the spec's last section); ask your human partner to review the spec file and the map before proceeding
 9. **Transition to implementation** — invoke writing-plans skill to create implementation plan
 
 ## Process Flow
@@ -277,7 +277,7 @@ Fix any issues inline. No need to re-review — just fix and move on.
 **User Review Gate:**
 After the spec review loop passes, ask the user to review the written spec before proceeding:
 
-> "Spec written and committed to `<path>`; the architecture delta is on screen (companion/artifact). Please review both and let me know if you want to make any changes before we start writing out the implementation plan."
+> "Spec written and committed to `<path>`; the architecture delta is on screen (companion/artifact) — or, without either, in the spec's last section. Please review both and let me know if you want to make any changes before we start writing out the implementation plan."
 
 Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 

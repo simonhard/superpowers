@@ -27,9 +27,12 @@ Zones are `subgraph ID["Label"] … end`. Colour a zone by the majority status o
 its blocks:
 
 ```
-style ZONE fill:#f0fdf4,stroke:#15803d,color:#14532d,stroke-width:2px   %% mostly new
-style ZONE fill:#fefce8,stroke:#ca8a04,color:#713f12                    %% mostly modified
-style ZONE fill:#f8fafc,stroke:#cbd5e1,color:#334155                    %% context
+%% mostly new
+style ZONE fill:#f0fdf4,stroke:#15803d,color:#14532d,stroke-width:2px
+%% mostly modified
+style ZONE fill:#fefce8,stroke:#ca8a04,color:#713f12
+%% context
+style ZONE fill:#f8fafc,stroke:#cbd5e1,color:#334155
 ```
 
 A nested zone that is entirely new may use `fill:#ecfdf5`.
@@ -78,10 +81,26 @@ Write the filled template as a *fragment* (no `<!DOCTYPE`) to the companion's
 `screen_dir`; the server wraps it in its frame. Fresh file name per map:
 `architecture-delta-<topic>.html`, revisions `-v2`, `-v3`.
 
-## Artifact wrapper
+In the HTML template, `{{COUNTS_HEADER}}` takes the `<th>…</th>` cells and
+`{{COUNTS_ROW}}` the matching `<td>…</td>` cells.
 
-Without a running companion, wrap the fragment in this minimal document and
-publish it as an artifact:
+## Hosted artifact
+
+When the host offers an artifact tool with its own page contract, follow that
+contract (load its design guidance if it asks for one) and carry over only the
+fragment's content: legend, counts table, the two `<pre class="mermaid">`
+blocks with their classDefs, and the three CSS rules. The host wraps the page
+in its own skeleton and renders Mermaid itself, so pin the theme with a
+per-diagram first line:
+
+```
+%%{init: {"theme": "neutral", "flowchart": {"useMaxWidth": false}}}%%
+```
+
+## Standalone HTML file
+
+For a plain HTML file opened in a browser, wrap the fragment in this minimal
+document:
 
 ```html
 <!DOCTYPE html>

@@ -32,8 +32,9 @@ list or from `scripts/classify-diff.sh`, never from memory.
    repository's top-level folders and the blocks the spec names, then go on.
 2. **Get the file list.** Planned: every file the spec creates, modifies or
    deletes. Actual: from the repository root run
-   `bash <this skill's directory>/scripts/classify-diff.sh --base <base-branch>`;
-   it prints one TSV row per file (status, path, block, zone), a `#counts`
+   `bash <this skill's directory>/scripts/classify-diff.sh --base <base-branch>`
+   (commit first: the script compares committed refs, so uncommitted edits do
+   not appear); it prints one TSV row per file (status, path, block, zone), a `#counts`
    row and one `#unmapped` row per path the map does not cover. Exit 2 means
    the script could not run (no or unknown base ref, missing map file, not
    inside a git work tree): read its message on stderr. If the base is the
@@ -59,6 +60,11 @@ File: `A` → new, `M` → modified, `D` → deleted, `R` → modified with labe
 Block: all files new → new; all deleted → deleted; otherwise modified;
 nothing touched → context, drawn only when an edge needs it.
 
+Counts row: a one-row Markdown table (HTML: the template's table). Actual
+mode shows the script's five numbers unchanged: added, modified, deleted,
+renamed, unmapped (renames are not folded into modified). Planned mode shows
+new / modified / deleted from the spec's file list.
+
 Planned mode only: a planned new file that already exists in the worktree →
 built (thick border). The actual map has no built class — everything in it
 is built.
@@ -69,8 +75,10 @@ In this order:
 
 1. **Visual companion**, when its server is running: fill
    `templates/architecture-delta.html` and write it as a fragment to the
-   companion's `screen_dir`.
-2. **Artifact**, otherwise: wrap the fragment as the recipe shows and publish.
+   companion's `screen_dir` (the brainstorming skill's visual-companion.md
+   explains how to check and start the server and where `screen_dir` is).
+2. **Artifact**, otherwise: publish the fragment under the host's artifact
+   contract — see the recipe.
 3. **Mermaid in the spec**, when neither exists: the spec section is the
    deliverable, and the gate text says so.
 
