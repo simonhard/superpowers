@@ -110,6 +110,7 @@ complete that path's reviews before implementation.
 | "The spike works, so I'll keep the code" | A spike's output is an answer. Keeping the code is a new request — classify it. |
 | "It grew, but I'm almost done — no need to re-classify" | Hidden complexity upgrades the path mid-task. Stop and say so. |
 | "They approved the spike, so the follow-up change is approved too" | Each task gets its own classification and its own approval. |
+| "The spec lists every file — a map adds nothing" | Your human partner approves blocks and their connections, not a file list. The map is what they approve. |
 
 ## Checklist
 
@@ -136,9 +137,9 @@ your path and complete them in order.
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
-7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **User reviews written spec** — ask user to review the spec file before proceeding
+6. **Write design doc** — the spec ends with an **Architecture Delta** section drawn with the mapping-architecture-delta skill (planned mode); save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
+7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope, delta check (see below)
+8. **User reviews written spec** — the architecture delta is on screen; ask your human partner to review the spec file and the map before proceeding
 9. **Transition to implementation** — invoke writing-plans skill to create implementation plan
 
 ## Process Flow
@@ -157,7 +158,7 @@ digraph brainstorming {
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
-    "Write design doc" [shape=box];
+    "Write design doc\n+ architecture delta" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
     "User reviews spec?" [shape=diamond];
     "Invoke writing-plans skill" [shape=doublecircle];
@@ -177,10 +178,10 @@ digraph brainstorming {
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
-    "Write design doc" -> "Spec self-review\n(fix inline)";
+    "User approves design?" -> "Write design doc\n+ architecture delta" [label="yes"];
+    "Write design doc\n+ architecture delta" -> "Spec self-review\n(fix inline)";
     "Spec self-review\n(fix inline)" -> "User reviews spec?";
-    "User reviews spec?" -> "Write design doc" [label="changes requested"];
+    "User reviews spec?" -> "Write design doc\n+ architecture delta" [label="changes requested"];
     "User reviews spec?" -> "Invoke writing-plans skill" [label="approved"];
 }
 ```
@@ -191,6 +192,11 @@ mcp-builder, or any other implementation skill. Bounded: after
 approval, implementation proceeds directly through the normal
 development workflow; no plan document. Spike: the terminal state is a
 reported recommendation.
+
+**The map is part of the spec, not a step after it.** On the architectural
+path, mapping-architecture-delta is invoked *while* the spec is written; it
+draws and implements nothing. After the gate, writing-plans remains the only
+follow-on skill.
 
 ## The Process
 
@@ -247,6 +253,16 @@ is the whole process.
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
+**Architecture Delta:**
+
+The spec ends with a section **Architecture Delta**, drawn with the
+mapping-architecture-delta skill in planned mode: a counts row (new,
+modified, deleted files), a system view and a repository view as Mermaid
+flowcharts, blocks coloured new / modified / deleted / context, thick
+border for what is already built. Draw it from the spec's own file list
+while writing the spec. Show it before the gate: visual companion when its
+server runs, otherwise an artifact; the Mermaid source stays in the spec.
+
 **Spec Self-Review:**
 After writing the spec document, look at it with fresh eyes:
 
@@ -254,13 +270,14 @@ After writing the spec document, look at it with fresh eyes:
 2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?
 3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition?
 4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
+5. **Delta check:** Every file and block the spec names appears in the Architecture Delta map, and the counts row matches the spec's file list. Fix the map or the list.
 
 Fix any issues inline. No need to re-review — just fix and move on.
 
 **User Review Gate:**
 After the spec review loop passes, ask the user to review the written spec before proceeding:
 
-> "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
+> "Spec written and committed to `<path>`; the architecture delta is on screen (companion/artifact). Please review both and let me know if you want to make any changes before we start writing out the implementation plan."
 
 Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
 
