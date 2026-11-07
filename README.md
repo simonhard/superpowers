@@ -24,6 +24,7 @@ This fork integrates Claude Code-native features into the Superpowers workflow.
 | User-Thrown Gate Enforcement | `userGate` / `user-gate` tag + opt-in hooks force re-validation when Claude closes a user-ordered verification task (see [Recommended Configuration](#recommended-configuration)) |
 | Subagent Model Routing | Opt-in per-task model tiers (`mechanical`/`standard`/`frontier`) route plan-execution subagents to cheaper models (see [Subagent Model Routing](#subagent-model-routing--optional-flow)) |
 | Configurable Commit Strategy | Opt-in `workflow.json` switches plan execution from per-task commits to a single commit at plan end (see [Commit Strategy](#commit-strategy)) |
+| Architecture Delta Map | Two-view Mermaid map of what a spec touches, shown before approval and redrawn from the git diff at branch finish (see [Architecture Delta Map](#architecture-delta-map)) |
 
 ## Visual Comparison
 
@@ -272,6 +273,16 @@ Setup notes:
 - The plan-time side is enforced: a TaskCreate gate blocks plan tasks that carry per-task commit steps while `at-end` is configured (fail-open, kill switch `SUPERPOWERS_WORKFLOW_GUARD=0`). Dispatch-time stays advisory, and the notice takes effect from the next session on (see the design doc for this boundary).
 - Undo: delete the file or remove the `commitStrategy` key — per-task commits resume at the next session start.
 
+## Architecture Delta Map
+
+*Skill: `skills/mapping-architecture-delta/`.*
+
+Before your human partner approves a spec, the spec ends with a two-view Mermaid map of what the change touches: a **system view** (what runs afterwards and how it is connected) and a **repository view** (which parts of the repo appear or change), coloured new / modified / deleted / context, with a counts row above. When the branch is finished, `finishing-a-development-branch` draws the same map from `git diff --name-status` against the base branch and names the deviations from the plan, before the merge/PR menu.
+
+- **Map file:** `docs/superpowers/architecture-map.md` in your project maps path prefixes to blocks and zones (longest prefix wins). The skill creates it on first use and extends it whenever the diff touches unmapped paths. Template: `skills/mapping-architecture-delta/templates/architecture-map.md`.
+- **Two modes:** *planned* (from the spec's file list, called by `brainstorming` on the architectural path) and *actual* (from `scripts/classify-diff.sh --base <ref>`, called by `finishing-a-development-branch`).
+- **Display:** visual companion when its server is running, otherwise an artifact; the Mermaid source always lives in the spec.
+
 ---
 
 ## What's Inside
@@ -294,6 +305,7 @@ Setup notes:
 - **receiving-code-review** - Responding to feedback
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
+- **mapping-architecture-delta** - Two-view architecture delta map: planned before the go, redrawn from the git diff at branch finish
 - **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
 
 **User-Thrown Gates** (optional flow, see "User-Thrown Gate Enforcement" above)

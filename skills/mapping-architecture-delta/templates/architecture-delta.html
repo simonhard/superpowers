@@ -1,0 +1,66 @@
+<h2>{{TITLE}}</h2>
+<p class="subtitle">{{SUBTITLE}}</p>
+
+<style>
+  .legend { display:flex; flex-wrap:wrap; gap:.6rem 1.2rem; margin:0 0 1.2rem; font-size:.9rem; }
+  .legend span { display:inline-flex; align-items:center; gap:.45rem; }
+  .chip { width:1.1rem; height:1.1rem; border-radius:4px; border:2px solid; display:inline-block; }
+  .chip.new { background:#dcfce7; border-color:#15803d; }
+  .chip.built { background:#dcfce7; border-color:#15803d; border-width:4px; }
+  .chip.mod { background:#fef9c3; border-color:#ca8a04; }
+  .chip.del { background:#fee2e2; border-color:#b91c1c; border-style:dashed; }
+  .chip.ctx { background:#f1f5f9; border-color:#94a3b8; }
+  .mockup-body { overflow-x:auto; background:#ffffff; }
+  .mermaid, .mermaid * { text-transform: none !important; letter-spacing: normal !important; }
+  .mermaid { padding: .5rem 0; }
+  .mermaid svg { max-width: none !important; }
+  .counts { border-collapse:collapse; margin:0 0 1.5rem; font-size:.9rem; }
+  .counts td, .counts th { padding:.3rem .9rem; border-bottom:1px solid var(--bg-tertiary, #e5e5e7); text-align:left; }
+  .counts th { color: var(--text-secondary, #86868b); font-weight:500; }
+</style>
+
+<div class="legend">
+  <span><i class="chip new"></i> new</span>
+  <span><i class="chip built"></i> new, already built</span>
+  <span><i class="chip mod"></i> modified</span>
+  <span><i class="chip del"></i> deleted</span>
+  <span><i class="chip ctx"></i> unchanged / context</span>
+</div>
+
+<table class="counts">
+  <tr>{{COUNTS_HEADER}}</tr>
+  <tr>{{COUNTS_ROW}}</tr>
+</table>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">A · System view — what runs afterwards and how it is connected</div>
+    <div class="mockup-body">
+<pre class="mermaid">
+{{SYSTEM_MERMAID}}
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">B · Repository view — which parts of the repository appear or change</div>
+    <div class="mockup-body">
+<pre class="mermaid">
+{{REPO_MERMAID}}
+</pre>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import mermaid from "https://cdnjs.cloudflare.com/ajax/libs/mermaid/12.2.0/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "neutral",
+    securityLevel: "loose",
+    flowchart: { htmlLabels: true, curve: "basis", nodeSpacing: 30, rankSpacing: 50, useMaxWidth: false },
+    themeVariables: { fontFamily: "system-ui, -apple-system, sans-serif", fontSize: "14px" }
+  });
+</script>
