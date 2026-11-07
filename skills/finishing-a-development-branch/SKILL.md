@@ -7,7 +7,7 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 ## Overview
 
-**Core principle:** Verify tests → Detect environment → Present options → Execute choice → Clean up.
+**Core principle:** Verify tests → Detect environment → Determine base → Show architecture delta → Present options → Execute choice → Clean up.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
@@ -30,8 +30,8 @@ Tests failing (<N> failures). Must fix before completing:
 ```bash
 GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
 GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
-# Capture now, while still inside the workspace — Step 5 changes directory
-# before cleanup (Step 6) needs this value
+# Capture now, while still inside the workspace — Step 6 changes directory
+# before cleanup (Step 7) needs this value
 WORKTREE_PATH=$(git rev-parse --show-toplevel)
 ```
 
@@ -40,7 +40,7 @@ This determines which menu to show and how cleanup works:
 | State | Menu | Cleanup |
 |-------|------|---------|
 | `GIT_DIR == GIT_COMMON` (normal repo) | Standard 3 options | No worktree to clean up |
-| `GIT_DIR != GIT_COMMON`, named branch | Standard 3 options | Provenance-based (see Step 6) |
+| `GIT_DIR != GIT_COMMON`, named branch | Standard 3 options | Provenance-based (see Step 7) |
 | `GIT_DIR != GIT_COMMON`, detached HEAD | Reduced 2 options (no merge) | Externally managed — leave in place |
 
 ## Step 3: Determine Base Branch
@@ -50,7 +50,23 @@ plan, the conversation, or the branch's upstream. If it is not already
 known, ask: "This branch split from <your best guess> - is that correct?"
 Confirm before merging: merging into the wrong base is expensive to undo.
 
-## Step 4: Present Options
+## Step 4: Show the Architecture Delta
+
+Invoke the mapping-architecture-delta skill in **actual** mode with the base
+branch from Step 3 — it runs its `scripts/classify-diff.sh --base <base-branch>`
+and draws the two views from the real diff. If the script exits 2, the base
+is unknown: go back to Step 3 and ask; do not draw from memory.
+
+Show the map (companion → artifact → Mermaid source, in that order). If the
+plan or its spec carries a planned map, list the three deviations by block:
+touched but not planned, planned but not touched, status differs from the
+plan. If no planned map exists, say so — "no planned map found at <paths
+searched>" — and show the actual map alone.
+
+The counts row and the deviation lists go *above* the menu of Step 5. The
+menu text itself stays exactly as written there.
+
+## Step 5: Present Options
 
 **Normal repo and named-branch worktree — present exactly these 3 options:**
 
@@ -81,7 +97,7 @@ human partner explicitly asking for it (see "If your human partner asks to
 discard the work" below). Wait for their answer; the integration decision
 is theirs.
 
-## Step 5: Execute Choice
+## Step 6: Execute Choice
 
 ### Option 1: Merge Locally
 
@@ -103,7 +119,7 @@ If tests fail on the merged result: stop, leave the worktree and branch in
 place, and investigate — nothing has been pushed, so the merge is local
 and recoverable.
 
-Once the merged result is green: clean up the worktree (Step 6), then
+Once the merged result is green: clean up the worktree (Step 7), then
 delete the branch:
 
 ```bash
@@ -150,13 +166,13 @@ MAIN_ROOT=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-tople
 cd "$MAIN_ROOT"
 ```
 
-Then clean up the worktree (Step 6) and force-delete the branch:
+Then clean up the worktree (Step 7) and force-delete the branch:
 
 ```bash
 git branch -D <feature-branch>
 ```
 
-## Step 6: Cleanup Workspace
+## Step 7: Cleanup Workspace
 
 **Runs for Option 1 and confirmed discards.** Options 2 and 3 always
 preserve the worktree. Both callers have already changed directory to the
@@ -223,3 +239,4 @@ place. If your platform provides a workspace-exit tool, use it.
 | "The merged-result failure is probably flaky" | A failing merged result stops everything. Branch and worktree stay put while you investigate. |
 | "The base branch is obviously main" | Confirm the fork point or ask. Merging into the wrong base is expensive to undo. |
 | "The push was rejected — force-push will fix it" | A rejected push means the remote moved. Investigate; force-push only on your human partner's explicit request. |
+| "The diff speaks for itself — no need to draw it" | Your human partner approved a map of planned changes. The integration decision rests on seeing the same map drawn from what actually changed. |
