@@ -35,7 +35,10 @@ list or from `scripts/classify-diff.sh`, never from memory.
    `bash <this skill's directory>/scripts/classify-diff.sh --base <base-branch>`;
    it prints one TSV row per file (status, path, block, zone), a `#counts`
    row and one `#unmapped` row per path the map does not cover. Exit 2 means
-   no base: stop and ask for the base branch.
+   the script could not run (no or unknown base ref, missing map file, not
+   inside a git work tree): read its message on stderr. If the base is the
+   problem, stop and ask your human partner for the base branch. Never draw
+   from memory.
 3. **Status per file** — see Status rules.
 4. **Status per block.** Roll files up by the map file's longest-prefix rule.
    Add a map row for every `#unmapped` path *before* drawing.
