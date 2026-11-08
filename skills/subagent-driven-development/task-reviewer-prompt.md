@@ -112,6 +112,21 @@ Subagent (general-purpose):
     unchanged code or spans tasks), report it as a ⚠️ item instead of
     broadening your search.
 
+    ## Acceptance Tests
+
+    If the brief has lines under **Acceptance tests**, check each line:
+
+    1. A test with exactly this name is in the diff.
+    2. It checks the behaviour from the outside, at the line's level: API
+       by calling the interface, UI through the page, CLI by running the
+       command, unit through the unit's public entry point. A direct call
+       of an internal helper does not count.
+    3. Its assertions check the criterion's "Then", with the values from
+       its example (the brief's first step shows them).
+    4. It is not skipped.
+
+    A violation is Important and names the criterion's ID.
+
     ## Part 2: Code Quality
 
     **Code quality:**

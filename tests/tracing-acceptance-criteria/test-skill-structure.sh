@@ -154,6 +154,19 @@ section_writing_plans() {
   has "$f" "**5. Acceptance coverage:**"
 }
 
+section_reviewers() {
+  local t=skills/subagent-driven-development/task-reviewer-prompt.md c=skills/requesting-code-review/code-reviewer.md
+  has "$t" "    ## Acceptance Tests"
+  has "$t" "If the brief has lines under **Acceptance tests**"
+  before "$t" "    ## Acceptance Tests" "    ## Part 2: Code Quality"
+  has "$c" "$MARKER"
+  has "$c" "**Acceptance tests** (when the plan's \`Spec:\` line names a spec"
+  for f in "$t" "$c"; do
+    has "$f" "A direct call"
+    has "$f" "A violation is Important and names the criterion's ID."
+  done
+}
+
 section_leaks() {
   local hits f
   hits="$(grep -rniE '/Users/|/home/|simon' "$SKILL_DIR" "$SCRIPT_DIR" --exclude=test-skill-structure.sh 2>/dev/null || true)"
