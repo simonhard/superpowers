@@ -127,6 +127,23 @@ section_tracing() {
   has skills/tracing-acceptance-criteria/templates/acceptance-overview.html "prefers-color-scheme: dark"
 }
 
+section_brainstorming() {
+  local f=skills/brainstorming/SKILL.md
+  has "$f" "$MARKER"
+  has "$f" "Criteria your"
+  has "$f" "acceptance criteria with test names, testing"
+  has "$f" "at the end, list each criterion → test name → file"
+  has "$f" "6. **Present acceptance criteria** — their own design section, written with the tracing-acceptance-criteria skill (define mode)"
+  has "$f" "10. **Hand off to a new session**"
+  has "$f" '"User approves design?" -> "Present acceptance criteria" [label="yes"];'
+  lacks "$f" '"User approves design?" -> "Write design doc\n+ architecture delta" [label="yes"];'
+  before "$f" "**Acceptance Criteria:**" "**Architecture Delta:**"
+  has "$f" "6. **Criteria check:**"
+  has "$f" "the acceptance criteria are in section <n>"
+  has "$f" "They named no criteria, so there are none"
+  has "$f" "I'll phrase their criterion a little more precisely"
+}
+
 section_leaks() {
   local hits f
   hits="$(grep -rniE '/Users/|/home/|simon' "$SKILL_DIR" "$SCRIPT_DIR" --exclude=test-skill-structure.sh 2>/dev/null || true)"
