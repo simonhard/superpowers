@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: Use when executing an implementation plan as the implementer yourself in a separate session — your human partner chose "Parallel Session, inline" at the writing-plans handoff
+description: Use when executing an implementation plan as the implementer yourself — the routing file sets parallelSession to executing-plans, so the writing-plans handoff named this skill
 ---
 
 ## CRITICAL CONSTRAINTS
@@ -31,15 +31,15 @@ record that survives your own forgetting.
 ledger and the tool results carry the record.
 
 **Continuous execution:** Do not pause to check in with your human partner
-between tasks. They chose a separate session to run the plan, not to answer
+between tasks. They started this session to run the plan, not to answer
 "should I continue?" after every task. Execute all tasks from the plan
 without stopping.
 
+**Started with a plan path, that start is the go:** your human partner approved the plan and this execution method by starting this session. Do not ask again.
+
 **Rulings, not stalls.** Conflicts, ambiguities, plan defects — decide them.
 The spec is the binding authority, the plan is its argument, and your
-judgment settles what neither answers. When the plan author session is
-alive (see Consulting the Plan Author), ask it first and ledger its answer
-as the ruling. Record every decision in the ledger as
+judgment settles what neither answers. Record every decision in the ledger as
 `Ruling: <what you decided> — <why> — <what it costs if wrong>`, and keep
 going. Deviating from the plan without a ledgered ruling is a decision made
 in secret.
@@ -52,8 +52,9 @@ those, stop and ask.
 
 ## When to Use
 
-- You have a plan from superpowers-extended-cc:writing-plans and your human
-  partner chose "Parallel Session, inline" at the handoff. That choice gave up
+- You have a plan from superpowers-extended-cc:writing-plans and the routing
+  file sets `"parallelSession": "executing-plans"`, so the handoff named this
+  skill. That choice gave up
   superpowers-extended-cc:subagent-driven-development's per-task review
   loop — stay on this skill; do not switch to subagent-driven development.
 - Tasks are mostly independent — the same precondition as
@@ -67,10 +68,6 @@ dispatches separately.
 Inline execution over a long plan still works — the ledger is what makes
 it recoverable — but the last tasks get the least of you.
 
-## Consulting the Plan Author
-
-Once, at start: run ListAgents and check whether the plan-writing session is alive (the handoff prompt normally names it). If it is, note its name — on every ambiguity or design question during execution, ask IT via SendMessage before guessing and before interrupting your human partner, and ledger its answer as the ruling. If it is not listed, rule yourself as described in "Rulings, not stalls".
-
 ## The Process
 
 ```dot
@@ -82,7 +79,7 @@ digraph process {
         "task-start: brief + BASE; read the brief; TaskUpdate in_progress" [shape=box];
         "Work the steps in order: TDD, run every verification, read every output" [shape=box];
         "Step output matches plan's Expected?" [shape=diamond];
-        "Plan wrong? Ask author or rule, and ledger. Code wrong? systematic-debugging" [shape=box];
+        "Plan wrong? Rule and ledger. Code wrong? systematic-debugging" [shape=box];
         "Commit as the plan's commit steps say" [shape=box];
         "Completion contract met?" [shape=diamond];
         "task-done: run tests, ledger the result; TaskUpdate completed + sync .tasks.json" [shape=box];
@@ -98,8 +95,8 @@ digraph process {
     "Setup: tasks, worktree, workspace + ledger, read plan + spec, pre-flight scan" -> "task-start: brief + BASE; read the brief; TaskUpdate in_progress";
     "task-start: brief + BASE; read the brief; TaskUpdate in_progress" -> "Work the steps in order: TDD, run every verification, read every output";
     "Work the steps in order: TDD, run every verification, read every output" -> "Step output matches plan's Expected?";
-    "Step output matches plan's Expected?" -> "Plan wrong? Ask author or rule, and ledger. Code wrong? systematic-debugging" [label="no"];
-    "Plan wrong? Ask author or rule, and ledger. Code wrong? systematic-debugging" -> "Work the steps in order: TDD, run every verification, read every output";
+    "Step output matches plan's Expected?" -> "Plan wrong? Rule and ledger. Code wrong? systematic-debugging" [label="no"];
+    "Plan wrong? Rule and ledger. Code wrong? systematic-debugging" -> "Work the steps in order: TDD, run every verification, read every output";
     "Step output matches plan's Expected?" -> "Commit as the plan's commit steps say" [label="yes, last step"];
     "Commit as the plan's commit steps say" -> "Completion contract met?";
     "Completion contract met?" -> "Work the steps in order: TDD, run every verification, read every output" [label="no - finish the task"];
@@ -203,9 +200,8 @@ what an earlier task produces, one ledger row — the two tasks, what one
 produces against what the other consumes, and what you found. Tasks that
 share nothing get no row; a plan whose tasks share nothing gets the single
 line `Pre-flight: no shared interfaces`. Rule on each conflict a row
-surfaces with the spec as the binding authority (asking the plan author
-first when it is alive), record the ruling beside its row, and start
-Task 1. Each task's own text is checked when you read its brief, not here.
+surfaces with the spec as the binding authority, record the ruling beside
+its row, and start Task 1. Each task's own text is checked when you read its brief, not here.
 
 ## The Task Loop
 
@@ -242,9 +238,8 @@ read its output, and compare. Three outcomes:
   cause; never patch the symptom to make the step's output match.
 - **The plan is wrong** — a step contradicts the spec, an interface from an
   earlier task doesn't match what this task consumes, a command that
-  cannot work. Ask the plan author via SendMessage if it is alive;
-  otherwise rule on the smallest change that satisfies the spec. Ledger it
-  as `Task <N>: Ruling: <finding> — <what you decided and why>`, and
+  cannot work. Rule on the smallest change that satisfies the spec. Ledger
+  it as `Task <N>: Ruling: <finding> — <what you decided and why>`, and
   continue. The ruling is carried, not remembered: later tasks that touch
   the same interface read it from the ledger.
 
@@ -364,10 +359,10 @@ Announce: "I'm using the finishing-a-development-branch skill to complete this w
 | "I remember what Task N says" | You remember a summary. The brief has the exact values. Read it. |
 | "The plan's code is right, skip watching the test fail" | A test you never saw fail proves nothing. It is one step. Run it. |
 | "I'll run the full suite at the end instead of per step" | Per-step runs are how you learn which step broke it. The end-of-task run is the contract, not a substitute. |
-| "The plan is wrong here, I'll just do the right thing" | Ask the plan author if it is alive, then do the right thing and ledger the ruling. Unledgered deviation is a decision made in secret. |
+| "The plan is wrong here, I'll just do the right thing" | Do the right thing and ledger the ruling. Unledgered deviation is a decision made in secret. |
 | "I'll write the ledger lines after a few tasks" | Compaction does not wait for a convenient moment. One line per task, in the same message as the commit. |
 | "I'll sync .tasks.json at the end" | A session that dies mid-plan resumes from `.tasks.json`. Sync after every status change. |
-| "Let me check in before the next task" | They chose a separate session so the plan would run. Progress prompts spend their time instead. Only the four stops stop you. |
+| "Let me check in before the next task" | They started this session to run the plan. Progress prompts spend their time instead. Only the four stops stop you. |
 | "I read my own diff carefully; the final reviewer is redundant" | Same author, same blind spots. The reviewer is the only fresh context this run buys. |
 | "Tests should pass, the change was trivial" | "Should" is not evidence. The contract requires the command and its output. |
 | "Subagents are slow and expensive, I'll skip the final review too" | Inline already removed the per-task reviewers. One review of the whole branch is the floor, not the ceiling. |
@@ -380,7 +375,6 @@ Announce: "I'm using the finishing-a-development-branch skill to complete this w
 ```
 You: I'm using the executing-plans skill to implement this plan.
 
-[ListAgents: plan author session "feature-planning" is alive]
 [TaskList: empty; docs/superpowers/plans/feature-plan.md.tasks.json found → TaskCreate per task with full description, blockedBy restored]
 [Setup: git worktree list → existing worktree for the branch, cd into it]
 [Read plan once: docs/superpowers/plans/feature-plan.md; spec read]
@@ -404,8 +398,8 @@ Task 2: Recovery modes
 [task-start plan 2 → brief read; BASE d4e5f6a; TaskUpdate in_progress]
 [Step 2: run failing test — FAIL, but on an import error: Task 1 exported
  installHook, brief consumes install_hook]
-[SendMessage to "feature-planning": which name is intended? → "installHook; the brief is a typo"]
-[Ledger: Task 2: Ruling: install_hook → installHook — plan author confirmed, matches Task 1 Produces — cost if wrong: one rename]
+[Ruling: Task 1 Produces names installHook; the brief's install_hook is a typo]
+[Ledger: Task 2: Ruling: install_hook → installHook — matches Task 1 Produces — cost if wrong: one rename]
 [Steps 2-5 as planned; commit b7c8d9e]
 [task-done plan 2 d4e5f6a -- npm test -- recovery → ledger: Task 2: complete (commits d4e5f6a..b7c8d9e, tests: npm test -- recovery → 8/8 pass)]
 [TaskUpdate completed; .tasks.json synced]
@@ -419,7 +413,7 @@ Reviewer: One Important finding — progress reporting interval hardcoded. Two M
 [Ledger: Final: fixed hardcoded interval — test_progress_interval_configurable RED→GREEN, suite 12/12]
 
 Rulings I made:
-- Task 2: install_hook → installHook (brief typo, confirmed by plan author; cost if wrong: one rename)
+- Task 2: install_hook → installHook (brief typo, matches Task 1 Produces; cost if wrong: one rename)
 
 Deferred minors:
 - README lacks a usage example

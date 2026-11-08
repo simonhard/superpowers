@@ -121,6 +121,30 @@ section_brainstorming() {
   lacks "$f" "written-spec approval only permits invoking writing-plans"
 }
 
+section_subagent_driven_development() {
+  local f=skills/subagent-driven-development/SKILL.md desc
+  desc="$(description_of "$f")"
+  in_text_has "$f description" "$desc" "started in a new session"
+  in_text_lacks "$f description" "$desc" "current session"
+  has "$f" "that start is the go"
+  has "$f" "Routing file sets parallelSession: executing-plans?"
+  lacks "$f" "Stay in this session"
+  lacks "$f" "Same session (no context switch)"
+}
+
+section_executing_plans() {
+  local f=skills/executing-plans/SKILL.md desc
+  desc="$(description_of "$f")"
+  in_text_has "$f description" "$desc" "routing file sets parallelSession to executing-plans"
+  has "$f" "that start is the go"
+  lacks "$f" "ListAgents"
+  lacks "$f" "SendMessage"
+  lacks "$f" "plan author" -i
+  lacks "$f" "Ask author"
+  lacks "$f" "Parallel Session"
+  lacks "$f" "chose a separate session"
+}
+
 # --- dispatcher: every section_* function above is one section --------------
 
 names=()
