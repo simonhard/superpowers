@@ -214,7 +214,7 @@ Suppress entirely if no user-gate tasks were tagged. Do NOT turn this into an `A
 ## Execution Handoff
 
 <HARD-GATE>
-The plan is written. Your answer ends with the handoff block below: no AskUserQuestion, no "shall I start?", no execution skill invoked in this session. Do not call EnterPlanMode or ExitPlanMode.
+The plan is written. Your answer ends with the handoff block below: no AskUserQuestion, no "shall I start?", no execution skill invoked in this session unless your human partner explicitly asks to execute here (see the last bullets below). Do not call EnterPlanMode or ExitPlanMode.
 </HARD-GATE>
 
 Execution always starts in a new session. Your human partner reviews the plan here, then starts that session with the command from the block; that start is their go for the plan and for the execution method.
@@ -226,7 +226,7 @@ Execution always starts in a new session. Your human partner reviews the plan he
 | sets `"parallelSession": "executing-plans"` | `/superpowers-extended-cc:executing-plans <absolute plan path>` |
 | anything else: no file, unreadable JSON, no key, any other value | `/superpowers-extended-cc:subagent-driven-development <absolute plan path>` |
 
-**End your answer with the handoff block.** Write its sentences in the language of the conversation, so a German conversation gets German sentences. `/clear, then:` and the command line are not sentences: they stay exactly as shown, in English, in every conversation, with the plan's absolute path filled in:
+**End your answer with the handoff block.** Write its sentences in the language of the conversation, so a German conversation gets German sentences. `/clear, then:` and the command line are not sentences: they stay in English in every conversation, `/clear, then:` exactly as shown and the command line as the table above names it, with the plan's absolute path filled in:
 
 ````text
 Plan written to `<plan path>`.

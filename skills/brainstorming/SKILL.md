@@ -192,7 +192,7 @@ digraph brainstorming {
 
 **Terminal states are path-bound.** Architectural: the terminal state is
 the handoff block. writing-plans runs in the next session, started by
-your human partner; this session never invokes it, nor frontend-design,
+your human partner; this session invokes it only on an explicit request to write the plan here, and never frontend-design,
 mcp-builder, or any other implementation skill. Bounded: after
 approval, implementation proceeds directly through the normal
 development workflow; no plan document. Spike: the terminal state is a
