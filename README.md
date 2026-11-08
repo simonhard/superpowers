@@ -297,7 +297,7 @@ Before your human partner approves a spec, the spec ends with a two-view Mermaid
 - **verification-before-completion** - Ensure it's actually fixed
 
 **Collaboration**
-- **brainstorming** - Socratic design refinement + *native task creation*
+- **brainstorming** - Socratic design refinement + *handoff to a new planning session*
 - **writing-plans** - Detailed implementation plans + *native task dependencies*
 - **executing-plans** - Inline plan execution: one context, one final review, *resumable native tasks + user gates*
 - **dispatching-parallel-agents** - Concurrent subagent workflows
