@@ -294,7 +294,7 @@ Changes? Tell me here and I'll show this block again. Otherwise, starting the ne
 ```
 ````
 
-Write the sentences in the language of the conversation, so a German conversation gets German sentences. `/clear, then:` and the command line are not sentences: they stay exactly as shown, in English, in every conversation, with the spec's absolute path filled in. Nothing comes after the code block, the code block holds exactly one line, and no model is named. If your human partner requests changes, make them, re-run the spec review loop, and show the block again. A bare "looks good" is not a request to plan here: show the block again. Only an explicit request to write the plan in this session lifts the handoff; then invoke writing-plans.
+Write the sentences in the language of the conversation, so a German conversation gets German sentences. `/clear, then:` and the command line are not sentences: they stay exactly as shown, in English, in every conversation, with the spec's absolute path filled in. A German answer still reads `/clear, then:`, never `/clear, dann:`; hooks recognise the handoff by that exact line. Nothing comes after the code block, the code block holds exactly one line, and no model is named. If your human partner requests changes, make them, re-run the spec review loop, and show the block again. A bare "looks good" is not a request to plan here: show the block again. Only an explicit request to write the plan in this session lifts the handoff; then invoke writing-plans.
 
 **Next phase:**
 
