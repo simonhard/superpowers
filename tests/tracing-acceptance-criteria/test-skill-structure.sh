@@ -144,6 +144,16 @@ section_brainstorming() {
   has "$f" "I'll phrase their criterion a little more precisely"
 }
 
+section_writing_plans() {
+  local f=skills/writing-plans/SKILL.md
+  has "$f" "$MARKER"
+  has "$f" "**Acceptance criteria.** When the spec has the table"
+  has "$f" "The names in the spec are binding."
+  has "$f" '- AC-1 [criterion sentence from the spec] → `[testName]` ([level])'
+  before "$f" "**Acceptance tests:** *(only when the spec has acceptance criteria)*" "**Verify:** \`exact test command\`"
+  has "$f" "**5. Acceptance coverage:**"
+}
+
 section_leaks() {
   local hits f
   hits="$(grep -rniE '/Users/|/home/|simon' "$SKILL_DIR" "$SCRIPT_DIR" --exclude=test-skill-structure.sh 2>/dev/null || true)"
