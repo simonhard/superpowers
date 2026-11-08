@@ -36,6 +36,14 @@
 # Session-end deferral:
 #   end the session, wrap up the session, call it a session
 #
+# ## Exemption: the session handoff
+#
+# A last answer that holds a line of its own reading `/clear, then:` (only
+# surrounding whitespace allowed) is never blocked, whatever else it says.
+# That line ends the sanctioned handoff block of brainstorming and
+# writing-plans, whose fixed sentence mentions "the next session". Quoting
+# the line inside running prose does not count.
+#
 # ## Environment variables (all optional)
 #
 # SUPERPOWERS_DEFLECTION_GUARD           Set to "0" to disable the hook
@@ -124,6 +132,13 @@ TEXT=$(echo "$RESULT" | jq -r '.text // empty' 2>/dev/null | tr -d '\r')
 TOKENS=$(echo "$RESULT" | jq -r '.tokens // 0' 2>/dev/null | tr -d '\r')
 
 [[ -z "$TEXT" ]] && exit 0
+
+# The sanctioned session handoff of brainstorming and writing-plans ends with
+# a line "/clear, then:" above the command for the next session. Its "next
+# session" is the contract with the human partner, not an excuse.
+if echo "$TEXT" | grep -qE '^[[:space:]]*/clear, then:[[:space:]]*$'; then
+    exit 0
+fi
 
 # Integer math on percentage.
 if [[ "${TOKENS:-0}" -le 0 || "${CONTEXT_LIMIT:-0}" -le 0 ]]; then
