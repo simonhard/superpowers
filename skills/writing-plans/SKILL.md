@@ -240,6 +240,7 @@ Changes? Tell me here and I'll show this block again. Otherwise, starting the ne
 ```
 ````
 
+- `/clear, then:` is never translated: a German answer still reads `/clear, then:`, not `/clear, dann:`. Hooks recognise the handoff by that exact line.
 - Nothing comes after the code block, and the code block holds exactly one line. `/clear` stays above it as text: two slash commands in one prompt do not run.
 - Name no model, in the block or before it.
 - Changes requested here: make them, update the plan and its `.tasks.json`, re-run the self-review, and show the block again.
