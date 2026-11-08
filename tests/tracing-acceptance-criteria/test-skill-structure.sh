@@ -182,6 +182,14 @@ section_finishing() {
   has "$f" "Tests are green, they'll accept anyway"
 }
 
+section_docs() {
+  has README.md "## Acceptance Criteria"
+  has README.md "(#acceptance-criteria)"
+  has README.md "- **tracing-acceptance-criteria** -"
+  has README.md "waits for your acceptance, then presents options"
+  has docs/testing.md "tests/tracing-acceptance-criteria/"
+}
+
 section_leaks() {
   local hits f
   hits="$(grep -rniE '/Users/|/home/|simon' "$SKILL_DIR" "$SCRIPT_DIR" --exclude=test-skill-structure.sh 2>/dev/null || true)"
