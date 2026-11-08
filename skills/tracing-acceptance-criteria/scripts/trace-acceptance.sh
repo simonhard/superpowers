@@ -150,15 +150,23 @@ fi
 [ "$rc" -eq 0 ] || exit 2
 
 # --- 2. the search ----------------------------------------------------------
-# For one name: every hit in a versioned test file (path contains test, spec
-# or e2e; Markdown and .tasks.json never count). Prints
+# For one name: every hit in a versioned test file (a path token is test(s),
+# spec(s) or e2e, or carries a Test/Spec word; Markdown and .tasks.json never
+# count). Prints
 #   <file>\037<line>\037<hits>\037<skipped 0|1>      ("-", "-", 0, 0 when none)
 # and appends every file with a hit to $hit_files.
 pick_hits='
-function is_test(p,    lp) {
+function is_test(p,    lp, k, i, t) {
   lp = tolower(p)
   if (lp ~ /\.(md|markdown)$/ || lp ~ /\.tasks\.json$/) return 0
-  return lp ~ /test|spec|e2e/
+  k = split(p, tok, "[^A-Za-z0-9]+")
+  for (i = 1; i <= k; i++) {
+    t = tok[i]
+    if (tolower(t) ~ /^(tests?|specs?|e2e)$/) return 1
+    if (t ~ /[a-z0-9](Tests?|Specs?)$/) return 1
+    if (t ~ /^(Tests?|Specs?)[A-Z0-9]/) return 1
+  }
+  return 0
 }
 function marker(s) {
   return index(s, ".skip(") || index(s, ".todo(") || index(s, "@skip") ||

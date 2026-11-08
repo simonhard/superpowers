@@ -191,10 +191,13 @@ itReportsACriterionWithoutTest() {
   put "$r" src/errors.js <<'EOF'
 // see itShowsAnError
 EOF
+  put "$r" src/specials/inspector_latest.js <<'EOF'
+// see itShowsAnError
+EOF
   commit_all "$r" "login"
 
   run_in "$r" --spec docs/spec.md
-  assert_contains "$OUT" "AC-2${tab}missing${tab}itShowsAnError${tab}-${tab}0" "without test: missing, no place, zero hits (a mention outside test files does not count)"
+  assert_contains "$OUT" "AC-2${tab}missing${tab}itShowsAnError${tab}-${tab}0" "without test: missing, no place, zero hits (a mention outside test files does not count, nor in look-alike paths such as inspector/latest/specials)"
   assert_contains "$OUT" "#counts${tab}criteria=2${tab}tests=2${tab}found=1${tab}missing=1${tab}skipped=0${tab}manual=0${tab}unmapped=0" "without test: counted as missing"
 }
 
