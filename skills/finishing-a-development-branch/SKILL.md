@@ -7,7 +7,7 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 ## Overview
 
-**Core principle:** Verify tests → Detect environment → Determine base → Show architecture delta → Present options → Execute choice → Clean up.
+**Core principle:** Verify tests → Detect environment → Determine base → Show architecture delta → Accept criteria → Present options → Execute choice → Clean up.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
@@ -30,8 +30,8 @@ Tests failing (<N> failures). Must fix before completing:
 ```bash
 GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
 GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
-# Capture now, while still inside the workspace — Step 6 changes directory
-# before cleanup (Step 7) needs this value
+# Capture now, while still inside the workspace — Step 7 changes directory
+# before cleanup (Step 8) needs this value
 WORKTREE_PATH=$(git rev-parse --show-toplevel)
 ```
 
@@ -40,7 +40,7 @@ This determines which menu to show and how cleanup works:
 | State | Menu | Cleanup |
 |-------|------|---------|
 | `GIT_DIR == GIT_COMMON` (normal repo) | Standard 3 options | No worktree to clean up |
-| `GIT_DIR != GIT_COMMON`, named branch | Standard 3 options | Provenance-based (see Step 7) |
+| `GIT_DIR != GIT_COMMON`, named branch | Standard 3 options | Provenance-based (see Step 8) |
 | `GIT_DIR != GIT_COMMON`, detached HEAD | Reduced 2 options (no merge) | Externally managed — leave in place |
 
 ## Step 3: Determine Base Branch
@@ -63,10 +63,34 @@ touched but not planned, planned but not touched, status differs from the
 plan. If no planned map exists, say so — "no planned map found at <paths
 searched>" — and show the actual map alone.
 
-The counts row and the deviation lists go *above* the menu of Step 5. The
+The counts row and the deviation lists come first: above the overview of
+Step 5, or, when the spec has no criteria, above the menu of Step 6. The
 menu text itself stays exactly as written there.
 
-## Step 5: Present Options
+## Step 5: Accept the Criteria
+
+1. **Trace.** Find the spec as for the map (the plan's `Spec:` line) and
+   invoke the tracing-acceptance-criteria skill in **trace** mode with that
+   spec and the base branch from Step 3.
+2. **No criteria.** Exit 3, or no spec at all (bounded work): say so in one
+   sentence in the language of the conversation, naming the spec if there
+   is one, and go on to Step 6. **Exit 2:** show the message and stop; never
+   draw the overview from memory.
+3. **Show the overview.** Below it, list the gaps (missing tests, skipped
+   tests, new tests without criterion) and recommend closing them before
+   acceptance. Then ask your human partner to accept, to reject a criterion
+   with its ID and the reason, or to add a criterion. No menu in the same
+   answer.
+4. **Accepted** → Step 6. Accepted despite a gap → name the gap in your
+   closing text, then Step 6.
+5. **Rejected or added** → rework on this branch: an added criterion goes
+   into the spec's table (origin your partner, with a test name); the test
+   comes first and fails, then the implementation, then a commit. Then run
+   Step 1 and this step again.
+
+The acceptance is your human partner's; the menu comes only after it.
+
+## Step 6: Present Options
 
 **Normal repo and named-branch worktree — present exactly these 3 options:**
 
@@ -97,7 +121,7 @@ human partner explicitly asking for it (see "If your human partner asks to
 discard the work" below). Wait for their answer; the integration decision
 is theirs.
 
-## Step 6: Execute Choice
+## Step 7: Execute Choice
 
 ### Option 1: Merge Locally
 
@@ -119,7 +143,7 @@ If tests fail on the merged result: stop, leave the worktree and branch in
 place, and investigate — nothing has been pushed, so the merge is local
 and recoverable.
 
-Once the merged result is green: clean up the worktree (Step 7), then
+Once the merged result is green: clean up the worktree (Step 8), then
 delete the branch:
 
 ```bash
@@ -166,13 +190,13 @@ MAIN_ROOT=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-tople
 cd "$MAIN_ROOT"
 ```
 
-Then clean up the worktree (Step 7) and force-delete the branch:
+Then clean up the worktree (Step 8) and force-delete the branch:
 
 ```bash
 git branch -D <feature-branch>
 ```
 
-## Step 7: Cleanup Workspace
+## Step 8: Cleanup Workspace
 
 **Runs for Option 1 and confirmed discards.** Options 2 and 3 always
 preserve the worktree. Both callers have already changed directory to the
@@ -240,3 +264,4 @@ place. If your platform provides a workspace-exit tool, use it.
 | "The base branch is obviously main" | Confirm the fork point or ask. Merging into the wrong base is expensive to undo. |
 | "The push was rejected — force-push will fix it" | A rejected push means the remote moved. Investigate; force-push only on your human partner's explicit request. |
 | "The diff speaks for itself — no need to draw it" | Your human partner approved a map of planned changes. The integration decision rests on seeing the same map drawn from what actually changed. |
+| "Tests are green, they'll accept anyway" | The acceptance is your human partner's. Show the overview, ask, and present the menu only after their answer. |

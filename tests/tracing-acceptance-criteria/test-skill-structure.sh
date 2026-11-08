@@ -167,6 +167,21 @@ section_reviewers() {
   done
 }
 
+section_finishing() {
+  local f=skills/finishing-a-development-branch/SKILL.md
+  has "$f" "→ Show architecture delta → Accept criteria → Present options →"
+  before "$f" "## Step 4: Show the Architecture Delta" "## Step 5: Accept the Criteria"
+  before "$f" "## Step 5: Accept the Criteria" "## Step 6: Present Options"
+  before "$f" "## Step 6: Present Options" "## Step 7: Execute Choice"
+  before "$f" "## Step 7: Execute Choice" "## Step 8: Cleanup Workspace"
+  lacks "$f" "## Step 5: Present Options"
+  lacks "$f" "(Step 7)"
+  has "$f" "invoke the tracing-acceptance-criteria skill in **trace** mode"
+  has "$f" "or no spec at all (bounded work)"
+  has "$f" "No menu in the same"
+  has "$f" "Tests are green, they'll accept anyway"
+}
+
 section_leaks() {
   local hits f
   hits="$(grep -rniE '/Users/|/home/|simon' "$SKILL_DIR" "$SCRIPT_DIR" --exclude=test-skill-structure.sh 2>/dev/null || true)"
