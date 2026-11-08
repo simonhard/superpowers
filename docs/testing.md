@@ -16,6 +16,7 @@ Live in `tests/`. Currently:
 - `tests/shell-lint/` — bash test wrapping `scripts/lint-shell.sh`.
 - `tests/diagnosing-superpowers/test-skill-structure.sh` — structural checks for the diagnosing-superpowers skill (frontmatter, referenced files, leak scan, word budget); behavior-scenario eval records are kept by the maintainer outside the repo.
 - `tests/mapping-architecture-delta/` — `test-skill-structure.sh` (frontmatter, word budget, referenced files, template placeholders, leak scan) and `test-classify-diff.sh` (throwaway git repo exercising `scripts/classify-diff.sh`: add, modify, delete, rename, non-ASCII path, unmapped paths, no map file, exit codes).
+- `tests/session-handoff/test-handoff-structure.sh` — structural checks for the session handoff: brainstorming, writing-plans and the handoff guard carry the same handoff block, the execution skills take their start as the go, onboard asks how a new session executes a plan, no machine-specific paths in the changed files. Section names as arguments (`hook`, `writing-plans`, …) run one part.
 
 Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.
 

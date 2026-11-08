@@ -345,6 +345,8 @@ INPUT=$(printf '{"tool_name":"Agent","tool_input":{"subagent_type":"general-purp
     "$WORK/tier-mechanical.jsonl" "$NOPROJ")
 rc=$(run_hook "$INPUT" HOME="$FAKEHOME")
 assert "violation blocks via user-level file" "2" "$rc"
+# The block message prints the path with a literal tilde, as users write it.
+# shellcheck disable=SC2088
 assert_stderr_contains "block message names user-level file" "~/.claude/superpowers/model-routing.json"
 rc=$(run_hook "$INPUT" HOME="$WORK")   # HOME without the file, no project file → dormant
 assert "dormant when neither file exists" "0" "$rc"
@@ -719,9 +721,10 @@ assert_stderr_contains "names resolved model sonnet" "model 'sonnet'"
 echo ""
 
 echo "Test 35: routing file with parallelSession key present → other gate branches unaffected"
-# Regression pin: the optional parallelSession key (consumed by the
-# handoff-guard hook for the writing-plans menu) must not perturb this
-# hook's tier-matching decisions when present in the same routing file.
+# Regression pin: the optional parallelSession key (consumed by
+# writing-plans and the handoff-guard hook to name the execution command)
+# must not perturb this hook's tier-matching decisions when present in the
+# same routing file.
 PARALLEL_DIR="$WORK/parallelsessionproject/docs/superpowers"
 mkdir -p "$PARALLEL_DIR"
 cat > "$PARALLEL_DIR/model-routing.json" <<'EOF'

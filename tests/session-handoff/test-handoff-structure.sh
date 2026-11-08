@@ -154,6 +154,34 @@ section_onboard() {
   lacks "$f" "Choose per plan"
 }
 
+section_docs() {
+  has README.md "One phase, one session"
+  lacks README.md "Architect pattern"
+  lacks README.md "Subagent-Driven (this session)"
+  lacks docs/model-routing-flow.md "Subagent-Driven (this session)"
+  has docs/testing.md "tests/session-handoff/test-handoff-structure.sh"
+  lacks tests/claude-code/test-model-routing-hook.sh "for the writing-plans menu"
+  lacks tests/claude-code/test-taskcreate-tier-hook.sh "for the writing-plans menu"
+}
+
+section_leaks() {
+  local f hits
+  for f in skills/brainstorming/SKILL.md skills/writing-plans/SKILL.md \
+           skills/subagent-driven-development/SKILL.md skills/executing-plans/SKILL.md \
+           hooks/pre-askuser-handoff-guard commands/onboard.md README.md \
+           docs/model-routing-flow.md docs/testing.md \
+           tests/claude-code/test-handoff-guard.sh tests/claude-code/test-model-routing-hook.sh \
+           tests/claude-code/test-taskcreate-tier-hook.sh; do
+    hits="$(grep -nE '/Users/|/home/' "$REPO_ROOT/$f" 2>/dev/null || true)"
+    if [ -z "$hits" ]; then
+      pass "$f has no machine-specific paths"
+    else
+      fail "$f has no machine-specific paths"
+      printf '%s\n' "$hits" | head -5 | sed 's/^/    /'
+    fi
+  done
+}
+
 # --- dispatcher: every section_* function above is one section --------------
 
 names=()

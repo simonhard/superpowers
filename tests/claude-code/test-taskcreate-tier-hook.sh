@@ -323,9 +323,10 @@ assert_stderr_contains "shows invalid value" "experimental"
 echo ""
 
 echo "Test 22: routing file with parallelSession key present → other gate branches unaffected"
-# Regression pin: the optional parallelSession key (consumed by the
-# handoff-guard hook for the writing-plans menu) must not perturb this
-# hook's tier-fence decisions when present in the same routing file.
+# Regression pin: the optional parallelSession key (consumed by
+# writing-plans and the handoff-guard hook to name the execution command)
+# must not perturb this hook's tier-fence decisions when present in the
+# same routing file.
 PARALLELPROJ="$WORK/parallelsessionproject"
 mkdir -p "$PARALLELPROJ/docs/superpowers"
 cat > "$PARALLELPROJ/docs/superpowers/model-routing.json" <<'EOF'
