@@ -28,7 +28,7 @@ Started with a spec path, that start is your human partner's approval of the spe
 
 The session that wrote the spec is gone, so nobody can answer for it. Where the spec is silent or contradicts itself, decide, and write each decision as one line under **Global Constraints**: `Ruling: <what> — <why>`.
 
-**Acceptance criteria.** When the spec has the table behind `<!-- acceptance-criteria -->`, every test name in it is written as the first, failing test of the task that builds the behaviour: its code goes in that task's first step, at the table's level and from the outside (API through the interface, UI through the page, CLI through the command), with the values from the criterion's example. The names in the spec are binding. An extra or changed name gets a `Ruling:` line, and the task that writes it updates the spec's table. No separate "tests first" task: the suite stays green after every task, and each test is still fixed before its code exists.
+**Acceptance criteria.** When the spec has the table behind `<!-- acceptance-criteria -->`, every test name in it is written as the first, failing test of the task that builds the behaviour: its code goes in that task's first step, at the table's level and from the outside (API through the interface, UI through the page, CLI through the command, unit through the unit's public entry point), with the values from the criterion's example. The names in the spec are binding. An extra or changed name gets a `Ruling:` line, and the task that writes it updates the spec's table. No separate "tests first" task: the suite stays green after every task, and each test is still fixed before its code exists.
 
 ## Scope Check
 

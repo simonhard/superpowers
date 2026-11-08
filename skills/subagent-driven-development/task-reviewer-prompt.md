@@ -114,7 +114,8 @@ Subagent (general-purpose):
 
     ## Acceptance Tests
 
-    If the brief has lines under **Acceptance tests**, check each line:
+    If the brief has lines under **Acceptance tests**, check each line
+    except those of level `manual` (your human partner checks those):
 
     1. A test with exactly this name is in the diff.
     2. It checks the behaviour from the outside, at the line's level: API

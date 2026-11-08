@@ -158,6 +158,7 @@ section_reviewers() {
   local t=skills/subagent-driven-development/task-reviewer-prompt.md c=skills/requesting-code-review/code-reviewer.md
   has "$t" "    ## Acceptance Tests"
   has "$t" "If the brief has lines under **Acceptance tests**"
+  has "$t" 'except those of level `manual`'
   before "$t" "    ## Acceptance Tests" "    ## Part 2: Code Quality"
   has "$c" "$MARKER"
   has "$c" "**Acceptance tests** (when the plan's \`Spec:\` line names a spec"
