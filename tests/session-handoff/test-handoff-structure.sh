@@ -63,8 +63,8 @@ in_text_lacks() {
   fi
 }
 
-# section_text FILE HEADING — "## HEADING" up to the next "## " heading
-section_text() {
+# text_of_section FILE HEADING — "## HEADING" up to the next "## " heading
+text_of_section() {
   awk -v h="## $2" '$0 == h {f = 1; print; next} f && /^## / {exit} f {print}' "$REPO_ROOT/$1"
 }
 
@@ -98,7 +98,7 @@ section_writing_plans() {
   lacks "$f" "Parallel Session"
   lacks "$f" "How would you like to execute"
   lacks "$f" "manages its own completion flow via"
-  handoff="$(section_text "$f" "Execution Handoff")"
+  handoff="$(text_of_section "$f" "Execution Handoff")"
   if [ -z "$handoff" ]; then
     fail "$f has section '## Execution Handoff'"
   else
