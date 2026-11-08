@@ -1,0 +1,55 @@
+<h2>{{TITLE}}</h2>
+<p class="subtitle">{{SUBTITLE}}</p>
+
+<style>
+  .ac { --ac-ok:#15803d; --ac-warn:#b45309; --ac-gap:#b91c1c; --ac-card:var(--bg-secondary, #ffffff); --ac-line:var(--border, #d1d1d6); --ac-muted:var(--text-secondary, #6e6e73); }
+  @media (prefers-color-scheme: dark) { .ac { --ac-ok:#4ade80; --ac-warn:#fbbf24; --ac-gap:#f87171; --ac-card:var(--bg-secondary, #2d2d2f); --ac-line:var(--border, #424245); --ac-muted:var(--text-secondary, #a1a1a6); } }
+  .ac { max-width:100%; overflow-wrap:anywhere; }
+  .ac-counts { display:flex; flex-wrap:wrap; gap:.4rem .9rem; margin:0 0 1.2rem; padding:0; list-style:none; font-size:.9rem; }
+  .ac-counts b { font-variant-numeric:tabular-nums; }
+  .ac-criterion { background:var(--ac-card); border:1px solid var(--ac-line); border-radius:10px; padding:.8rem 1rem; margin:0 0 .9rem; }
+  .ac-head { display:flex; flex-wrap:wrap; gap:.2rem .7rem; align-items:baseline; }
+  .ac-id { font-weight:600; }
+  .ac-meta { color:var(--ac-muted); font-size:.85rem; }
+  .ac-tests { list-style:none; margin:.5rem 0 0; padding:0; }
+  .ac-tests li { display:flex; flex-wrap:wrap; gap:.1rem .6rem; padding:.15rem 0; }
+  .ac-mark { width:1.2rem; flex:none; font-weight:700; }
+  .ac-found .ac-mark { color:var(--ac-ok); }
+  .ac-skipped .ac-mark { color:var(--ac-warn); }
+  .ac-missing .ac-mark { color:var(--ac-gap); }
+  .ac-name, .ac-where { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.85rem; }
+  .ac-where, .ac-example { color:var(--ac-muted); }
+  .ac-example { margin:.5rem 0 0; font-size:.9rem; }
+  .ac-unmapped h3 { font-size:1rem; margin:1.4rem 0 .4rem; }
+</style>
+
+<div class="ac">
+  <ul class="ac-counts">{{COUNTS}}</ul>
+  {{CRITERIA}}
+  <section class="ac-unmapped">{{UNMAPPED}}</section>
+</div>
+
+<!--
+Fill-in guide. Labels follow the language of the spec; numbers and every
+test line come from the script output, nothing else.
+
+COUNTS — one <li> per number of the #counts row:
+  <li>criteria <b>3</b></li><li>found <b>4</b></li><li>missing <b>1</b></li> …
+
+CRITERIA — one block per #criterion row, its test rows inside:
+  <section class="ac-criterion">
+    <div class="ac-head"><span class="ac-id">AC-1</span><span>Criterion sentence</span>
+      <span class="ac-meta">partner · API</span></div>
+    <ul class="ac-tests">
+      <li class="ac-found"><span class="ac-mark">✔</span><span class="ac-name">itLogsAUserInAndRefreshes</span><span class="ac-where">tests/LoginTest.php:4</span></li>
+      <li class="ac-skipped"><span class="ac-mark">⚠</span><span class="ac-name">…</span><span class="ac-where">file:line · skipped</span></li>
+      <li class="ac-missing"><span class="ac-mark">—</span><span class="ac-name">…</span><span class="ac-where">missing</span></li>
+    </ul>
+  </section>
+  A manual criterion has no test list; instead:
+    <p class="ac-example">You check this yourself. Given … When … Then … (from the spec)</p>
+  Hits above 1 go after the place: "tests/x.sh:12 · 3 hits".
+
+UNMAPPED — <h3>New tests without criterion</h3><ul class="ac-tests"><li>…</li></ul>,
+  or nothing when the script printed no #unmapped row.
+-->
