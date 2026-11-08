@@ -145,6 +145,15 @@ section_executing_plans() {
   lacks "$f" "chose a separate session"
 }
 
+section_onboard() {
+  local f=commands/onboard.md
+  has "$f" "parallelSession"
+  has "$f" "How should a new session execute a plan?"
+  has "$f" "\"parallelSession\": \"executing-plans\""
+  lacks "$f" "Parallel Session"
+  lacks "$f" "Choose per plan"
+}
+
 # --- dispatcher: every section_* function above is one section --------------
 
 names=()
