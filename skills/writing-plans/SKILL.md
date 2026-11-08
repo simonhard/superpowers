@@ -226,7 +226,7 @@ Execution always starts in a new session. Your human partner reviews the plan he
 | sets `"parallelSession": "executing-plans"` | `/superpowers-extended-cc:executing-plans <absolute plan path>` |
 | anything else: no file, unreadable JSON, no key, any other value | `/superpowers-extended-cc:subagent-driven-development <absolute plan path>` |
 
-**End your answer with the handoff block.** Write its sentences in the language of the conversation; `/clear, then:` and the command line stay exactly as shown, with the plan's absolute path filled in:
+**End your answer with the handoff block.** Write its sentences in the language of the conversation, so a German conversation gets German sentences. `/clear, then:` and the command line are not sentences: they stay exactly as shown, in English, in every conversation, with the plan's absolute path filled in:
 
 ````text
 Plan written to `<plan path>`.
