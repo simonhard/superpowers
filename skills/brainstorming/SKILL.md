@@ -43,10 +43,11 @@ selected path's prerequisites:
 
 - Spike: the human partner approves the question and probe.
 - Bounded: the human partner approves the short in-chat design.
-- Architectural: the human partner reviews and approves the written spec,
-  then reviews the written implementation plan and selects its execution
-  method. Conversational design approval only permits writing the spec;
-  written-spec approval only permits invoking writing-plans.
+- Architectural: the human partner reviews the written spec and starts
+  the planning session with the command from the handoff block; that
+  start approves the spec. The planning session ends the same way, and
+  starting the execution session approves the plan and its execution
+  method. Conversational design approval only permits writing the spec.
 
 A reply approves the stage actually presented. Approval of an idea or
 feature scope does not approve artifacts that do not exist yet. Resume
@@ -111,6 +112,7 @@ complete that path's reviews before implementation.
 | "It grew, but I'm almost done — no need to re-classify" | Hidden complexity upgrades the path mid-task. Stop and say so. |
 | "They approved the spike, so the follow-up change is approved too" | Each task gets its own classification and its own approval. |
 | "The spec lists every file — a map adds nothing" | Your human partner approves blocks and their connections, not a file list. The map is what they approve. |
+| "They said it looks good — I'll start the plan right here" | Starting the next session is the go. Show the block again. |
 
 ## Checklist
 
@@ -140,7 +142,7 @@ your path and complete them in order.
 6. **Write design doc** — the spec ends with an **Architecture Delta** section drawn with the mapping-architecture-delta skill (planned mode); save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope, delta check (see below)
 8. **User reviews written spec** — the architecture delta is on screen (or, without a display, in the spec's last section); ask your human partner to review the spec file and the map before proceeding
-9. **Transition to implementation** — invoke writing-plans skill to create implementation plan
+9. **Hand off to a new session** — end with the handoff block; never invoke writing-plans in this session
 
 ## Process Flow
 
@@ -160,8 +162,9 @@ digraph brainstorming {
     "User approves design?" [shape=diamond];
     "Write design doc\n+ architecture delta" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
-    "User reviews spec?" [shape=diamond];
-    "Invoke writing-plans skill" [shape=doublecircle];
+    "Ask for review, end with handoff block" [shape=box];
+    "Changes requested in this session?" [shape=diamond];
+    "Human starts new session: writing-plans <spec path>" [shape=doublecircle];
     "Hidden complexity? Upgrade path" [shape=box];
 
     "Classify: spike / bounded / architectural" -> "Present question + probe (2-3 sentences)" [label="spike"];
@@ -180,14 +183,16 @@ digraph brainstorming {
     "User approves design?" -> "Present design sections" [label="no, revise"];
     "User approves design?" -> "Write design doc\n+ architecture delta" [label="yes"];
     "Write design doc\n+ architecture delta" -> "Spec self-review\n(fix inline)";
-    "Spec self-review\n(fix inline)" -> "User reviews spec?";
-    "User reviews spec?" -> "Write design doc\n+ architecture delta" [label="changes requested"];
-    "User reviews spec?" -> "Invoke writing-plans skill" [label="approved"];
+    "Spec self-review\n(fix inline)" -> "Ask for review, end with handoff block";
+    "Ask for review, end with handoff block" -> "Changes requested in this session?";
+    "Changes requested in this session?" -> "Write design doc\n+ architecture delta" [label="yes"];
+    "Changes requested in this session?" -> "Human starts new session: writing-plans <spec path>" [label="no"];
 }
 ```
 
-**Terminal states are path-bound.** Architectural: the ONLY skill you
-invoke after brainstorming is writing-plans — never frontend-design,
+**Terminal states are path-bound.** Architectural: the terminal state is
+the handoff block. writing-plans runs in the next session, started by
+your human partner; this session never invokes it, nor frontend-design,
 mcp-builder, or any other implementation skill. Bounded: after
 approval, implementation proceeds directly through the normal
 development workflow; no plan document. Spike: the terminal state is a
@@ -196,7 +201,7 @@ reported recommendation.
 **The map is part of the spec, not a step after it.** On the architectural
 path, mapping-architecture-delta is invoked *while* the spec is written; it
 draws and implements nothing. After the gate, writing-plans remains the only
-follow-on skill.
+follow-on skill, and it runs in the next session.
 
 ## The Process
 
@@ -274,17 +279,27 @@ After writing the spec document, look at it with fresh eyes:
 
 Fix any issues inline. No need to re-review — just fix and move on.
 
-**User Review Gate:**
-After the spec review loop passes, ask the user to review the written spec before proceeding:
+**Handoff:**
+After the spec review loop passes, end your answer with the handoff block. Its first line asks for the review:
 
-> "Spec written and committed to `<path>`; the architecture delta is on screen (companion/artifact) — or, without either, in the spec's last section. Please review both and let me know if you want to make any changes before we start writing out the implementation plan."
+````text
+Spec written and committed to `<spec path>`; the architecture delta is on screen (companion/artifact) — or, without either, in the spec's last section. Please review both.
 
-Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
+Changes? Tell me here and I'll show this block again. Otherwise, starting the next session is your go.
 
-**Implementation:**
+/clear, then:
 
-- Invoke the writing-plans skill to create a detailed implementation plan
-- Do NOT invoke any other skill. writing-plans is the next step.
+```
+/superpowers-extended-cc:writing-plans <absolute spec path>
+```
+````
+
+Write the sentences in the language of the conversation; `/clear, then:` and the command line stay exactly as shown, with the spec's absolute path filled in. Nothing comes after the code block, the code block holds exactly one line, and no model is named. If your human partner requests changes, make them, re-run the spec review loop, and show the block again. A bare "looks good" is not a request to plan here: show the block again. Only an explicit request to write the plan in this session lifts the handoff; then invoke writing-plans.
+
+**Next phase:**
+
+- writing-plans, started by your human partner in a new session with the spec's path
+- Do NOT invoke writing-plans or any other skill here, unless your human partner explicitly asks to write the plan in this session
 
 ## Visual Companion
 
@@ -304,52 +319,3 @@ A question about a UI topic is not automatically a visual question. "What does p
 
 If they agree to the companion, read the detailed guide before proceeding:
 `skills/brainstorming/visual-companion.md`
-
----
-
-## Native Task Integration
-
-**REQUIRED:** Use Claude Code's native task tools to create structured tasks during design.
-
-### During Design Validation
-
-After each design section is validated, create a task with structured description:
-
-```yaml
-TaskCreate:
-  subject: "Implement [Component Name]"
-  description: |
-    **Goal:** [What this component produces]
-
-    **Files:**
-    - Create/Modify: [paths identified during design]
-
-    **Acceptance Criteria:**
-    - [ ] [Criterion from design validation]
-    - [ ] [Criterion from design validation]
-
-    **Verify:** [How to test this component works]
-
-    ```json:metadata
-    {"files": ["path/from/design"], "acceptanceCriteria": ["criterion 1", "criterion 2"], "modelTier": "mechanical|standard|frontier"}
-    ```
-  activeForm: "Implementing [Component Name]"
-```
-
-These tasks will be refined with steps and verify commands during plan writing. See `skills/shared/task-format-reference.md` for the full format.
-
-Track all task IDs for dependency setup.
-
-### After All Components Validated
-
-Set up dependency relationships:
-
-```yaml
-TaskUpdate:
-  taskId: [dependent-task-id]
-  addBlockedBy: [prerequisite-task-ids]
-```
-
-### Before Handoff
-
-Run `TaskList` to display the complete task structure with dependencies.

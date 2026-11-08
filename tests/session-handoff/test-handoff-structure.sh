@@ -108,6 +108,19 @@ section_writing_plans() {
   fi
 }
 
+section_brainstorming() {
+  local f=skills/brainstorming/SKILL.md
+  has "$f" "$SENTENCE"
+  has "$f" "/clear, then:"
+  has "$f" "/superpowers-extended-cc:writing-plans <absolute spec path>"
+  has "$f" "Hand off to a new session"
+  has "$f" "I'll start the plan right here"
+  lacks "$f" "TaskCreate"
+  lacks "$f" "Native Task Integration"
+  lacks "$f" "Invoke writing-plans skill"
+  lacks "$f" "written-spec approval only permits invoking writing-plans"
+}
+
 # --- dispatcher: every section_* function above is one section --------------
 
 names=()
