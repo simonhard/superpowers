@@ -15,8 +15,9 @@
 #   #counts criteria=N tests=N found=N missing=N skipped=N manual=N unmapped=N
 #
 # Exit 0: ran. Exit 3: the spec has no marker (message on stdout).
-# Exit 2: usage error, spec not found, broken table, duplicate id, not inside a
-# git work tree, unknown base (message on stderr).
+# Exit 2: usage error, spec not found or not readable, broken table, duplicate
+# id, not inside a git work tree, unknown base or no merge base with it (message
+# on stderr).
 set -eu
 set -o pipefail
 
@@ -61,9 +62,11 @@ done
 
 [ -n "$spec" ] || die_usage "--spec <file> is required"
 [ -f "$spec" ] || die_usage "spec not found: $spec"
+[ -r "$spec" ] || die_usage "spec not readable: $spec"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die_usage "not inside a git work tree"
 if [ -n "$base" ]; then
   git rev-parse --verify --quiet "${base}^{commit}" >/dev/null || die_usage "unknown ref for --base: $base"
+  git merge-base "$base" HEAD >/dev/null 2>&1 || die_usage "no merge base between $base and HEAD"
 fi
 root="$(git rev-parse --show-toplevel)"
 
@@ -76,7 +79,7 @@ export SEP
 #   C <id> <origin> <level> <text>    T <id> <name>    M <id> <tests cell>
 read_table='
 function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
-function bad(msg) { printf "error: %s:%d: %s\n", spec, ln, msg > "/dev/stderr"; failed = 1; exit 2 }
+function bad(msg) { printf "error: %s:%d: %s\n", spec, ln, msg > "/dev/stderr"; exit 2 }
 function cells(s,    k, i) {
   gsub(/\\\|/, "\002", s)
   sub(/^\|/, "", s); sub(/\|[ \t]*$/, "", s)
@@ -135,7 +138,6 @@ BEGIN {
       marker = ln; state = 1
     }
   }
-  if (failed) exit 2
   if (state == 1 || state == 2) { ln++; bad("the marker must stand directly above the table header") }
   if (state == 3 && !rows) { ln++; bad("the table has no rows") }
   if (!marker) exit 3
@@ -163,7 +165,7 @@ function is_test(p,    lp, k, i, t) {
   for (i = 1; i <= k; i++) {
     t = tok[i]
     if (tolower(t) ~ /^(tests?|specs?|e2e)$/) return 1
-    if (t ~ /[a-z0-9](Tests?|Specs?)$/) return 1
+    if (t ~ /[A-Za-z0-9](Tests?|Specs?)$/) return 1
     if (t ~ /^(Tests?|Specs?)[A-Z0-9]/) return 1
   }
   return 0
@@ -208,7 +210,7 @@ search() {
     *[!A-Za-z0-9_]*) pattern=(-F -e "'$1'" -e "\"$1\"" -e "\`$1\`") ;;
     *) pattern=(-w -F -e "$1") ;;
   esac
-  { git -C "$root" -c core.quotePath=false grep -n -z "${pattern[@]}" 2>/dev/null || true; } \
+  { git -C "$root" -c core.quotePath=false grep -n -z -I --no-color "${pattern[@]}" 2>/dev/null || true; } \
     | tr '\000' '\037' \
     | TRACE_ROOT="$root" TRACE_HIT_FILES="$hit_files" awk "$pick_hits"
 }
@@ -265,8 +267,8 @@ printf '%s' "$out"
 # test whose name is not in the table is reported.
 find_declared='
 BEGIN { sep = ENVIRON["SEP"]; file = ENVIRON["TRACE_FILE"]; names = ENVIRON["TRACE_NAMES"]; q = sprintf("%c", 39) }
-/^@@/ { s = $0; sub(/^@@ -[0-9,]+ \+/, "", s); split(s, a, /[ ,]/); ln = a[1] + 0; next }
-/^\+\+\+ / || /^--- / { next }
+/^@@/ { inhunk = 1; s = $0; sub(/^@@ -[0-9,]+ \+/, "", s); split(s, a, /[ ,]/); ln = a[1] + 0; next }
+!inhunk && (/^\+\+\+ / || /^--- /) { next }
 /^\+/ {
   l = substr($0, 2); name = ""
   if (match(l, "(^|[^A-Za-z0-9_$.])x?(it|test)(\\.(only|skip|todo))?\\([ \t]*[\"`" q "]")) {

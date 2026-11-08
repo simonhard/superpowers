@@ -194,10 +194,13 @@ EOF
   put "$r" src/specials/inspector_latest.js <<'EOF'
 // see itShowsAnError
 EOF
+  mkdir -p "$r/tests/fixtures"
+  printf 'itShowsAnError\000binary\n' >"$r/tests/fixtures/blob.bin"
+  git -C "$r" config color.ui always
   commit_all "$r" "login"
 
   run_in "$r" --spec docs/spec.md
-  assert_contains "$OUT" "AC-2${tab}missing${tab}itShowsAnError${tab}-${tab}0" "without test: missing, no place, zero hits (a mention outside test files does not count, nor in look-alike paths such as inspector/latest/specials)"
+  assert_contains "$OUT" "AC-2${tab}missing${tab}itShowsAnError${tab}-${tab}0" "without test: missing, no place, zero hits (a mention outside test files does not count, nor in look-alike paths such as inspector/latest/specials, nor in a binary file, nor with color.ui=always)"
   assert_contains "$OUT" "#counts${tab}criteria=2${tab}tests=2${tab}found=1${tab}missing=1${tab}skipped=0${tab}manual=0${tab}unmapped=0" "without test: counted as missing"
 }
 
@@ -332,7 +335,11 @@ itFindsStringNamedTests() {
   local r="$TMP/strings"
   new_repo "$r"
   spec_with '| AC-1 | A user logs in and the session refreshes | partner | API | `logs a user in`, `keeps the session after reload` |' \
+    '| AC-2 | The UI greets the user | proposal | UI | `greets in the UI suite` |' \
     | put "$r" docs/spec.md
+  put "$r" App/LoginUITests.swift <<'EOF'
+Q_it("greets in the UI suite", () => {});
+EOF
   put "$r" tests/login.spec.js <<'EOF'
 describe('login', () => {
   Q_it('logs a user in with single sign-on', () => {});
@@ -345,6 +352,7 @@ EOF
   run_in "$r" --spec docs/spec.md
   assert_contains "$OUT" "AC-1${tab}found${tab}logs a user in${tab}tests/login.spec.js:3${tab}1" "strings: single quotes, a longer name with the same start does not match"
   assert_contains "$OUT" "AC-1${tab}found${tab}keeps the session after reload${tab}tests/login.spec.js:4${tab}1" "strings: double quotes"
+  assert_contains "$OUT" "AC-2${tab}found${tab}greets in the UI suite${tab}App/LoginUITests.swift:1${tab}1" "strings: a camelCase token with capitals (LoginUITests) marks a test path"
 }
 
 itHandlesANonAsciiPath() {
@@ -360,6 +368,8 @@ EOF
   put "$r" "tests/Übersicht/übersicht.test.js" <<'EOF'
 Q_it('zeigt die Übersicht', () => {});
 Q_it('zeigt die Summe', () => {});
+++ count;
+Q_it('zeigt den Rest', () => {});
 EOF
   commit_all "$r" "sum"
 
@@ -367,6 +377,7 @@ EOF
   assert_equal 0 "$RC" "non-ascii: exits 0"
   assert_contains "$OUT" "AC-1${tab}found${tab}zeigt die Übersicht${tab}tests/Übersicht/übersicht.test.js:1${tab}1" "non-ascii: the path is printed verbatim"
   assert_contains "$OUT" "#unmapped${tab}zeigt die Summe${tab}tests/Übersicht/übersicht.test.js:2" "non-ascii: tests without criterion are found in that file"
+  assert_contains "$OUT" "#unmapped${tab}zeigt den Rest${tab}tests/Übersicht/übersicht.test.js:4" "non-ascii: an added line starting with ++ does not shift later line numbers"
 }
 
 itStopsOnAnUnknownBase() {
@@ -379,6 +390,11 @@ itStopsOnAnUnknownBase() {
   assert_equal 2 "$RC" "unknown base: exits 2"
   assert_contains "$ERR" "unknown ref for --base: no-such-branch" "unknown base: names the ref"
   assert_equal "" "$OUT" "unknown base: no overview on stdout"
+  git -C "$r" branch unrelated "$(git -C "$r" commit-tree -m "unrelated root" "$(git -C "$r" hash-object -t tree /dev/null)")"
+  run_in "$r" --spec docs/spec.md --base unrelated
+  assert_equal 2 "$RC" "unknown base: a base without a merge base exits 2"
+  assert_contains "$ERR" "no merge base" "unknown base: says there is no merge base"
+  assert_equal "" "$OUT" "unknown base: no merge base leaves stdout empty"
 }
 
 itStopsOnAMissingSpec() {
@@ -390,6 +406,16 @@ itStopsOnAMissingSpec() {
   run_in "$r" --spec docs/nope.md
   assert_equal 2 "$RC" "missing spec: a path that does not exist exits 2"
   assert_contains "$ERR" "spec not found: docs/nope.md" "missing spec: names the path"
+  spec_with '| AC-1 | A user logs in | partner | API | `itLogsIn` |' >"$r/locked.md"
+  chmod 000 "$r/locked.md"
+  if [ -r "$r/locked.md" ]; then
+    echo "  note: spec stays readable after chmod (root), unreadable-spec check skipped"
+  else
+    run_in "$r" --spec locked.md
+    assert_equal 2 "$RC" "missing spec: an unreadable spec exits 2"
+    assert_contains "$ERR" "spec not readable" "missing spec: says it is not readable"
+  fi
+  chmod 644 "$r/locked.md"
   mkdir -p "$TMP/plain"
   spec_with '| AC-1 | A user logs in | partner | API | `itLogsIn` |' >"$TMP/plain/spec.md"
   run_in "$TMP/plain" --spec spec.md
