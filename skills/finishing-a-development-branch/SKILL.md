@@ -84,9 +84,11 @@ menu text itself stays exactly as written there.
 4. **Accepted** → Step 6. Accepted despite a gap → name the gap in your
    closing text, then Step 6.
 5. **Rejected or added** → rework on this branch: an added criterion goes
-   into the spec's table (origin your partner, with a test name); the test
-   comes first and fails, then the implementation, then a commit. Then run
-   Step 1 and this step again.
+   into the spec's table (origin your partner, with a test name). A
+   rejection whose reason asks for something new is an added criterion: a
+   row of its own in your partner's words; the rejected criterion's text
+   stays as it is. The test comes first and fails, then the implementation,
+   then a commit. Then run Step 1 and this step again.
 
 The acceptance is your human partner's; the menu comes only after it.
 
