@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Test: pre-askuser-handoff-guard hook — synthetic transcripts, no LLM.
 # Covers all decision branches: armed via Skill tool_use, armed via user-message
-# invocation (content as string AND as text-block list),
-# compliant two-option handoff → allow, wrong options → block, CLARIFICATION
-# token → allow, disarmed by later execution Skill → allow, prior compliant
-# handoff → allow, no TaskCreate after arm → allow, no routing file → allow,
-# kill switch → allow, non-AskUserQuestion tool → allow,
-# missing/garbage transcript → allow.
+# invocation (content as string AND as text-block list), any question after the
+# plan → block with the handoff block (the retired three-option menu included),
+# CLARIFICATION token → allow, disarmed by later execution Skill → allow, no
+# TaskCreate after arm → allow, no routing file → allow, kill switch → allow,
+# non-AskUserQuestion tool → allow, missing/garbage transcript → allow, and the
+# command the block names per routing file (parallelSession).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -42,6 +42,16 @@ assert_stderr_contains() {
     else
         echo "  [FAIL] $label — stderr missing: $needle"
         FAILED=$((FAILED + 1))
+    fi
+}
+
+assert_stderr_lacks() {
+    local label="$1" needle="$2"
+    if grep -qF -- "$needle" "$WORK/stderr" 2>/dev/null; then
+        echo "  [FAIL] $label — stderr contains: $needle"
+        FAILED=$((FAILED + 1))
+    else
+        echo "  [PASS] $label"
     fi
 }
 
@@ -105,28 +115,6 @@ cat > "$WORK/disarmed-by-execution.jsonl" <<'EOF'
 {"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"superpowers-extended-cc:subagent-driven-development"}}]}}
 EOF
 
-# Transcript: armed, then disarmed by a prior compliant AskUserQuestion.
-python3 -c "
-import json, sys
-lines = [
-    {\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"superpowers-extended-cc:writing-plans\"}}]}},
-    {\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"TaskCreate\", \"input\": {\"subject\": \"Task 1\", \"description\": \"goal\"}}]}},
-    {\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"AskUserQuestion\", \"input\": {
-        \"questions\": [{
-            \"question\": \"Plan complete and saved. How would you like to execute it?\",
-            \"header\": \"Execution\",
-            \"options\": [
-                {\"label\": \"Subagent-Driven (this session)\", \"description\": \"fast\"},
-                {\"label\": \"Parallel Session (separate)\", \"description\": \"worktree\"}
-            ]
-        }]
-    }}]}}
-]
-with open(sys.argv[1], 'w') as f:
-    for l in lines:
-        f.write(json.dumps(l) + '\n')
-" "$WORK/disarmed-by-prior-handoff.jsonl"
-
 # Transcript: writing-plans arm but no TaskCreate after it.
 cat > "$WORK/arm-no-taskcreate.jsonl" <<'EOF'
 {"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"superpowers-extended-cc:writing-plans"}}]}}
@@ -152,8 +140,9 @@ EOF
 # AskUserQuestion inputs
 # ---------------------------------------------------------------------------
 
-# Compliant handoff (two correct labels).
-make_compliant_input() {
+# The retired three-option execution menu. It used to be the mandated handoff;
+# now it asks for a go the next session gives, so it blocks like any question.
+make_old_menu_input() {
     local transcript="$1" cwd="${2:-$WORK/project}"
     python3 -c "
 import json, sys
@@ -164,8 +153,9 @@ inp = {
             'question': 'Plan complete and saved to docs/superpowers/plans/2026-06-10-foo.md. How would you like to execute it?',
             'header': 'Execution',
             'options': [
-                {'label': 'Subagent-Driven (this session)', 'description': 'I dispatch fresh subagent per task, review between tasks, fast iteration'},
-                {'label': 'Parallel Session (separate)', 'description': 'Open new session in worktree with executing-plans, batch execution with checkpoints'}
+                {'label': 'Subagent-Driven (this session)', 'description': 'Runs here: fresh subagent per task.'},
+                {'label': 'Parallel Session (separate)', 'description': 'You open a second session that runs subagent-driven-development.'},
+                {'label': 'Parallel Session, inline (separate)', 'description': 'You open a second session that implements every task itself.'}
             ]
         }]
     },
@@ -294,53 +284,45 @@ echo "Test 8: armed via Skill tool_use + wrong options → BLOCK"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
 rc=$(run_hook "$INPUT")
 assert "exit code" "2" "$rc"
-assert_stderr_contains "headline present" "EXECUTION HANDOFF VIOLATION — WRONG AskUserQuestion STRUCTURE"
-assert_stderr_contains "required YAML: option 1 label" "Subagent-Driven (this session)"
-assert_stderr_contains "required YAML: option 2 label" "Parallel Session (separate)"
+assert_stderr_contains "headline present" "EXECUTION HANDOFF: no AskUserQuestion after the plan is written."
 assert_stderr_contains "footer trace log" "Trace log:"
 assert_stderr_contains "footer rationale" "docs/model-routing-flow.md"
 echo ""
 
-echo "Test 9: armed via Skill tool_use + correct two labels → allow"
-INPUT=$(make_compliant_input "$WORK/armed-via-skill.jsonl")
+echo "Test 9: armed via Skill tool_use + retired three-option menu → BLOCK"
+INPUT=$(make_old_menu_input "$WORK/armed-via-skill.jsonl")
 rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
+assert "exit code" "2" "$rc"
 echo ""
 
 echo "Test 10: armed via user-message string + wrong options → BLOCK"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-user-string.jsonl")
 rc=$(run_hook "$INPUT")
 assert "exit code" "2" "$rc"
-assert_stderr_contains "headline" "EXECUTION HANDOFF VIOLATION — WRONG AskUserQuestion STRUCTURE"
+assert_stderr_contains "headline" "EXECUTION HANDOFF: no AskUserQuestion after the plan is written."
 echo ""
 
-echo "Test 11: armed via user-message string + correct two labels → allow"
-INPUT=$(make_compliant_input "$WORK/armed-via-user-string.jsonl")
+echo "Test 11: armed via user-message string + retired three-option menu → BLOCK"
+INPUT=$(make_old_menu_input "$WORK/armed-via-user-string.jsonl")
 rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
+assert "exit code" "2" "$rc"
 echo ""
 
 echo "Test 12: armed via user-message text-block list + wrong options → BLOCK"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-user-blocks.jsonl")
 rc=$(run_hook "$INPUT")
 assert "exit code" "2" "$rc"
-assert_stderr_contains "headline (text-block path)" "EXECUTION HANDOFF VIOLATION — WRONG AskUserQuestion STRUCTURE"
+assert_stderr_contains "headline (text-block path)" "EXECUTION HANDOFF: no AskUserQuestion after the plan is written."
 echo ""
 
-echo "Test 13: armed via user-message text-block list + correct labels → allow"
-INPUT=$(make_compliant_input "$WORK/armed-via-user-blocks.jsonl")
+echo "Test 13: armed via user-message text-block list + retired three-option menu → BLOCK"
+INPUT=$(make_old_menu_input "$WORK/armed-via-user-blocks.jsonl")
 rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
+assert "exit code" "2" "$rc"
 echo ""
 
 echo "Test 14: disarmed by later execution Skill invocation → allow"
 INPUT=$(make_wrong_options_input "$WORK/disarmed-by-execution.jsonl")
-rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
-echo ""
-
-echo "Test 15: disarmed by prior compliant AskUserQuestion in transcript → allow"
-INPUT=$(make_wrong_options_input "$WORK/disarmed-by-prior-handoff.jsonl")
 rc=$(run_hook "$INPUT")
 assert "exit code" "0" "$rc"
 echo ""
@@ -351,16 +333,16 @@ rc=$(run_hook "$INPUT")
 assert "exit code" "0" "$rc"
 echo ""
 
-echo "Test 17: block message contains required YAML header/option labels verbatim"
+echo "Test 17: block message is the handoff block"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
 run_hook "$INPUT" >/dev/null || true
-assert_stderr_contains "required YAML header" "header: \"Execution\""
-assert_stderr_contains "required question text" "How would you like to execute it?"
-assert_stderr_contains "subagent description in YAML" "fresh subagent per task"
-assert_stderr_contains "parallel description in YAML" "subagent-driven-development"
-assert_stderr_contains "option 1 instruction" "Re-issue AskUserQuestion with exactly that structure"
-assert_stderr_contains "option 2 instruction" "CLARIFICATION"
-assert_stderr_contains "option 3 instruction" "SUPERPOWERS_ROUTING_GUARD=0"
+assert_stderr_contains "plan line" "Plan written to <plan path>."
+assert_stderr_contains "changes sentence" "Changes? Tell me here and I'll show this block again. Otherwise, starting the next session is your go."
+assert_stderr_contains "clear line" "/clear, then:"
+assert_stderr_contains "command line" "/superpowers-extended-cc:subagent-driven-development <absolute plan path>"
+assert_stderr_contains "nothing after the block" "Nothing after the code block. Name no model."
+assert_stderr_contains "clarification escape" "CLARIFICATION"
+assert_stderr_contains "kill switch" "SUPERPOWERS_ROUTING_GUARD=0"
 echo ""
 
 echo "Test 18: user-level routing file (no project file) → active"
@@ -407,9 +389,9 @@ echo "Test 20: invalid-UTF-8 byte in transcript poisons only its own line"
 INPUT=$(make_wrong_options_input "$WORK/badutf8-armed.jsonl")
 rc=$(run_hook "$INPUT")
 assert "armed transcript with bad byte + wrong options → still block" "2" "$rc"
-INPUT=$(make_compliant_input "$WORK/badutf8-armed.jsonl")
+INPUT=$(make_old_menu_input "$WORK/badutf8-armed.jsonl")
 rc=$(run_hook "$INPUT")
-assert "armed transcript with bad byte + compliant → allow" "0" "$rc"
+assert "armed transcript with bad byte + retired menu → block" "2" "$rc"
 echo ""
 
 echo "Test 21: /bin/bash canary — block path must work on stock macOS bash 3.2"
@@ -420,58 +402,6 @@ INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
 _rc=0
 env HOME="$ISOLATED_HOME" /bin/bash "$HOOK" >/dev/null 2>"$WORK/stderr" <<< "$INPUT" && _rc=$? || _rc=$?
 assert "armed wrong-menu blocks under /bin/bash" "2" "$_rc"
-echo ""
-
-echo "Test 22: recommendation direction vs measured context usage"
-# The last assistant entry's usage (input + cache tokens) is the measured
-# context size. Window defaults to 200000; 140k => 70%, 10k => 5%.
-make_usage_transcript() { # $1=out-file $2=total-tokens
-    cat "$WORK/armed-via-skill.jsonl" > "$1"
-    python3 -c "
-import json, sys
-entry = {'type': 'assistant', 'message': {'usage': {'input_tokens': 1000, 'cache_read_input_tokens': int(sys.argv[2]) - 1000, 'cache_creation_input_tokens': 0}, 'content': [{'type': 'text', 'text': 'Skill note'}]}}
-open(sys.argv[1], 'a').write(json.dumps(entry) + '\n')
-" "$1" "$2"
-}
-make_recommended_input() { # $1=transcript $2=which(subagent|parallel)
-    python3 -c "
-import json, sys
-which = sys.argv[3]
-sub = 'Subagent-Driven (this session)' + (' (Recommended)' if which == 'subagent' else '')
-par = 'Parallel Session (separate)' + (' (Recommended)' if which == 'parallel' else '')
-inp = {
-    'tool_name': 'AskUserQuestion',
-    'tool_input': {'questions': [{
-        'question': 'Plan complete and saved to docs/superpowers/plans/2026-06-10-foo.md. How would you like to execute it?',
-        'header': 'Execution',
-        'options': [{'label': sub, 'description': 'd'}, {'label': par, 'description': 'd'}]}]},
-    'transcript_path': sys.argv[1],
-    'cwd': sys.argv[2]
-}
-print(json.dumps(inp))
-" "$1" "$WORK/project" "$2"
-}
-make_usage_transcript "$WORK/armed-high-usage.jsonl" 140000
-make_usage_transcript "$WORK/armed-low-usage.jsonl" 10000
-# A percentage needs a proven window; an auto-compact at <=200k proves 200k.
-prove_200k() { # $1=transcript
-    echo '{"type": "system", "subtype": "compact_boundary", "compactMetadata": {"trigger": "auto", "preTokens": 168000}}' >> "$1"
-}
-cp "$WORK/armed-high-usage.jsonl" "$WORK/armed-high-unproven.jsonl"
-prove_200k "$WORK/armed-high-usage.jsonl"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-high-usage.jsonl" subagent)")
-assert "70% used + Subagent recommended → block" "2" "$rc"
-assert_stderr_contains "block cites measured percentage" "70%"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-high-usage.jsonl" parallel)")
-assert "70% used + Parallel recommended → allow" "0" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-low-usage.jsonl" parallel)")
-assert "5% used + Parallel recommended → block" "2" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-low-usage.jsonl" subagent)")
-assert "5% used + Subagent recommended → allow" "0" "$rc"
-rc=$(run_hook "$(make_compliant_input "$WORK/armed-high-usage.jsonl")")
-assert "70% used + no (Recommended) marker → allow (fail-open)" "0" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-via-skill.jsonl" subagent)")
-assert "no usage data + Subagent recommended → allow (fail-open)" "0" "$rc"
 echo ""
 
 echo "Test 23: skill-body injection after arm must NOT disarm"
@@ -518,47 +448,6 @@ assert "mention of execution skill in free text does not disarm → still blocke
 INPUT=$(make_wrong_options_input "$WORK/disarmed-by-execution.jsonl")
 rc=$(run_hook "$INPUT")
 assert "execution Skill invocation still disarms → allow" "0" "$rc"
-echo ""
-
-echo "Test 24: measured usage above 200k proves a 1M window"
-# 462k measured (live Fable 1M handoff) is 46% of 1M, not 231% of 200k.
-make_usage_transcript "$WORK/armed-1m-usage.jsonl" 462000
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-1m-usage.jsonl" subagent)")
-assert "462k used + Subagent recommended → allow (46% of 1M)" "0" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-1m-usage.jsonl" parallel)")
-assert "462k used + Parallel recommended → block (46% of 1M)" "2" "$rc"
-assert_stderr_contains "block cites promoted window" "1000000-token window"
-make_usage_transcript "$WORK/armed-1m-high.jsonl" 700000
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-1m-high.jsonl" subagent)")
-assert "700k used + Subagent recommended → block (70% of 1M)" "2" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-1m-usage.jsonl" parallel)" SUPERPOWERS_CONTEXT_WINDOW=500000)
-assert "explicit window is never promoted (462k/500k=92%, Parallel ok)" "0" "$rc"
-echo ""
-
-echo "Test 25: unproven window only blocks when the 200k and 1M readings agree"
-# Live miss (2026-09-18): 196k on a 1M session read as 98% of 200k; the guard
-# forced a Parallel recommendation and the model then refused to edit its own
-# plan file, citing the number. Nothing in that transcript proved the window.
-make_usage_transcript "$WORK/armed-196k-unproven.jsonl" 196000
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-196k-unproven.jsonl" subagent)")
-assert "196k, window unproven + Subagent recommended → allow" "0" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-high-unproven.jsonl" subagent)")
-assert "140k, window unproven + Subagent recommended → allow" "0" "$rc"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-low-usage.jsonl" parallel)")
-assert "10k, window unproven + Parallel recommended → block (low on either window)" "2" "$rc"
-assert_stderr_contains "unproven block does not assert a window" "at most 5%"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-196k-unproven.jsonl" subagent)" SUPERPOWERS_CONTEXT_WINDOW=200000)
-assert "196k + explicit 200k window + Subagent recommended → block" "2" "$rc"
-# An earlier peak above 200k keeps proving 1M after a compaction dropped usage.
-make_usage_transcript "$WORK/armed-1m-then-low.jsonl" 462000
-python3 -c "
-import json, sys
-entry = {'type': 'assistant', 'message': {'usage': {'input_tokens': 150000}, 'content': [{'type': 'text', 'text': 'after compact'}]}}
-open(sys.argv[1], 'a').write(json.dumps(entry) + '\n')
-" "$WORK/armed-1m-then-low.jsonl"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-1m-then-low.jsonl" parallel)")
-assert "150k after a 462k peak + Parallel recommended → block (15% of 1M)" "2" "$rc"
-assert_stderr_contains "peak keeps the 1M window" "1000000-token window"
 echo ""
 
 echo "Test 26: user message that only MENTIONS writing-plans (no command-name tag) must NOT arm"
@@ -703,135 +592,80 @@ rc=$(run_hook "$INPUT")
 assert "real command-message/command-name/command-args format arms → non-handoff question blocked" "2" "$rc"
 echo ""
 
-echo "Test 32: wrong-structure block message names subagent-driven-development's per-task review, not the old WITHOUT phrasing"
+echo "Test 32: block message carries no AskUserQuestion YAML"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
 run_hook "$INPUT" >/dev/null || true
-assert_stderr_contains "mentions subagent-driven-development per-task review" "runs subagent-driven-development with the same per-task review"
-if grep -qF "WITHOUT the per-task review loop" "$WORK/stderr" 2>/dev/null; then
-    echo "  [FAIL] must not contain stale WITHOUT phrasing"
-    FAILED=$((FAILED + 1))
-else
-    echo "  [PASS] must not contain stale WITHOUT phrasing"
-fi
+assert_stderr_lacks "no AskUserQuestion YAML" "AskUserQuestion:"
 echo ""
 
-echo "Test 33: wrong-structure block message drops the old 'other option gives up' line"
+echo "Test 33: block message drops the retired menu labels"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
 run_hook "$INPUT" >/dev/null || true
-if grep -qF "That review loop is what the other option gives up" "$WORK/stderr" 2>/dev/null; then
-    echo "  [FAIL] must not contain stale 'other option gives up' line"
-    FAILED=$((FAILED + 1))
-else
-    echo "  [PASS] must not contain stale 'other option gives up' line"
-fi
+assert_stderr_lacks "no 'Subagent-Driven (this session)'" "Subagent-Driven (this session)"
 echo ""
 
-echo "Test 34: low-context block with Parallel recommended uses the new phrasing"
-rc=$(run_hook "$(make_recommended_input "$WORK/armed-low-usage.jsonl" parallel)")
-assert "10% low usage + Parallel recommended → block" "2" "$rc"
-if grep -qF "drops the per-task review loop" "$WORK/stderr" 2>/dev/null; then
-    echo "  [FAIL] must not contain stale 'drops the per-task review loop' phrasing"
-    FAILED=$((FAILED + 1))
-else
-    echo "  [PASS] must not contain stale 'drops the per-task review loop' phrasing"
-fi
-assert_stderr_contains "new low-context phrasing" "a fresh session gains nothing yet"
-echo ""
-
-echo "Test 35 (T3): wrong-structure block message names the inline parallel-session option"
+echo "Test 35: block message offers no parallel session"
 INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
 run_hook "$INPUT" >/dev/null || true
-assert_stderr_contains "third label present in block message" "Parallel Session, inline (separate)"
+assert_stderr_lacks "no 'Parallel Session'" "Parallel Session"
 echo ""
 
 # ---------------------------------------------------------------------------
-# parallelSession routing-key tests (T4a-T4e)
+# parallelSession: which execution command the block names
 # ---------------------------------------------------------------------------
 
-# Generic N-option menu builder (no "(Recommended)" markers — the context
-# recommendation rule stays out of play for these tests).
-make_menu_input() {
-    local transcript="$1" cwd="$2"; shift 2
-    python3 -c "
-import json, sys
-transcript = sys.argv[1]
-cwd = sys.argv[2]
-labels = sys.argv[3:]
-options = [{'label': l, 'description': 'd'} for l in labels]
-inp = {
-    'tool_name': 'AskUserQuestion',
-    'tool_input': {'questions': [{
-        'question': 'Plan complete and saved to docs/superpowers/plans/2026-06-10-foo.md. How would you like to execute it?',
-        'header': 'Execution',
-        'options': options}]},
-    'transcript_path': transcript,
-    'cwd': cwd
+make_routing_project() { # $1=dir name under $WORK  $2=file content
+    mkdir -p "$WORK/$1/docs/superpowers"
+    printf '%s\n' "$2" > "$WORK/$1/docs/superpowers/model-routing.json"
 }
-print(json.dumps(inp))
-" "$transcript" "$cwd" "$@"
-}
+make_routing_project project-parallel-exec '{"mechanical":"haiku","standard":"sonnet","frontier":"inherit","parallelSession":"executing-plans"}'
+make_routing_project project-parallel-sdd '{"mechanical":"haiku","standard":"sonnet","frontier":"inherit","parallelSession":"subagent-driven-development"}'
+make_routing_project project-parallel-unknown '{"mechanical":"haiku","standard":"sonnet","frontier":"inherit","parallelSession":"turbo"}'
+make_routing_project project-broken-json '{"mechanical": "haiku", "parallelSession": '
 
-LABEL_SUB="Subagent-Driven (this session)"
-LABEL_PARALLEL="Parallel Session (separate)"
-LABEL_PARALLEL_INLINE="Parallel Session, inline (separate)"
+CMD_SDD="/superpowers-extended-cc:subagent-driven-development <absolute plan path>"
+CMD_EXEC="/superpowers-extended-cc:executing-plans <absolute plan path>"
 
-# Routing file forcing the separate-session route to subagent-driven-development.
-ROUTING_DIR_SDD="$WORK/project-parallel-sdd/docs/superpowers"
-mkdir -p "$ROUTING_DIR_SDD"
-cat > "$ROUTING_DIR_SDD/model-routing.json" <<'EOF'
-{"mechanical":"haiku","standard":"sonnet","frontier":"inherit","parallelSession":"subagent-driven-development"}
-EOF
-
-# Routing file forcing the separate-session route to executing-plans.
-ROUTING_DIR_EXEC="$WORK/project-parallel-exec/docs/superpowers"
-mkdir -p "$ROUTING_DIR_EXEC"
-cat > "$ROUTING_DIR_EXEC/model-routing.json" <<'EOF'
-{"mechanical":"haiku","standard":"sonnet","frontier":"inherit","parallelSession":"executing-plans"}
-EOF
-
-echo "Test 36 (T4a): parallelSession=subagent-driven-development + all three labels → block"
-INPUT=$(make_menu_input "$WORK/armed-via-skill.jsonl" "$WORK/project-parallel-sdd" "$LABEL_SUB" "$LABEL_PARALLEL" "$LABEL_PARALLEL_INLINE")
+echo "Test 41: the routing file picks the command the block names"
+INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl" "$WORK/project-parallel-exec")
 rc=$(run_hook "$INPUT")
-assert "exit code" "2" "$rc"
-assert_stderr_contains "cites parallelSession key" "parallelSession"
-assert_stderr_contains "cites the disallowed inline label" "Parallel Session, inline (separate)"
+assert "parallelSession=executing-plans → block" "2" "$rc"
+assert_stderr_contains "names executing-plans" "$CMD_EXEC"
+assert_stderr_lacks "does not name subagent-driven-development" "$CMD_SDD"
+for proj in project-parallel-sdd project-parallel-unknown project-broken-json project; do
+    INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl" "$WORK/$proj")
+    rc=$(run_hook "$INPUT")
+    assert "$proj → block" "2" "$rc"
+    assert_stderr_contains "$proj names subagent-driven-development" "$CMD_SDD"
+    assert_stderr_lacks "$proj does not name executing-plans" "$CMD_EXEC"
+done
 echo ""
 
-echo "Test 37 (T4b): parallelSession=executing-plans + all three labels → block"
-INPUT=$(make_menu_input "$WORK/armed-via-skill.jsonl" "$WORK/project-parallel-exec" "$LABEL_SUB" "$LABEL_PARALLEL" "$LABEL_PARALLEL_INLINE")
-rc=$(run_hook "$INPUT")
-assert "exit code" "2" "$rc"
-assert_stderr_contains "cites parallelSession key" "parallelSession"
-assert_stderr_contains "cites the disallowed plain-parallel label" "Parallel Session (separate)"
+echo "Test 42: the project routing file wins over the home file (first file found, keys never merged)"
+HOME_EXEC="$WORK/home-exec"
+mkdir -p "$HOME_EXEC/.claude/superpowers"
+printf '%s\n' '{"mechanical":"haiku","parallelSession":"executing-plans"}' > "$HOME_EXEC/.claude/superpowers/model-routing.json"
+INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl" "$WORK/project")
+rc=$(run_hook "$INPUT" HOME="$HOME_EXEC")
+assert "project file without the key + home file with executing-plans → block" "2" "$rc"
+assert_stderr_contains "project file wins → subagent-driven-development" "$CMD_SDD"
+INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl" "$WORK/noproject")
+rc=$(run_hook "$INPUT" HOME="$HOME_EXEC")
+assert "no project file + home file with executing-plans → block" "2" "$rc"
+assert_stderr_contains "home file used → executing-plans" "$CMD_EXEC"
 echo ""
 
-echo "Test 38 (T4c): parallelSession=executing-plans + matching two-option menu → allow"
-INPUT=$(make_menu_input "$WORK/armed-via-skill.jsonl" "$WORK/project-parallel-exec" "$LABEL_SUB" "$LABEL_PARALLEL_INLINE")
+echo "Test 43: a second plan after an in-session execution re-arms the guard"
+cat > "$WORK/second-plan-after-execution.jsonl" <<'EOT'
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"superpowers-extended-cc:writing-plans"}}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"TaskCreate","input":{"subject":"Task 1","description":"goal"}}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"superpowers-extended-cc:subagent-driven-development"}}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"superpowers-extended-cc:writing-plans"}}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"TaskCreate","input":{"subject":"Task 1 of plan 2","description":"goal"}}]}}
+EOT
+INPUT=$(make_wrong_options_input "$WORK/second-plan-after-execution.jsonl")
 rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
-echo ""
-
-echo "Test 39 (T4d): no parallelSession key + all three labels → allow"
-INPUT=$(make_menu_input "$WORK/armed-via-skill.jsonl" "$WORK/project" "$LABEL_SUB" "$LABEL_PARALLEL" "$LABEL_PARALLEL_INLINE")
-rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
-echo ""
-
-echo "Test 40 (T4e): parallelSession=subagent-driven-development + matching two-option menu → allow"
-INPUT=$(make_menu_input "$WORK/armed-via-skill.jsonl" "$WORK/project-parallel-sdd" "$LABEL_SUB" "$LABEL_PARALLEL")
-rc=$(run_hook "$INPUT")
-assert "exit code" "0" "$rc"
-echo ""
-
-echo "Test 41: wrong-structure block message must not contain stale 'Good default' phrasing"
-INPUT=$(make_wrong_options_input "$WORK/armed-via-skill.jsonl")
-run_hook "$INPUT" >/dev/null || true
-if grep -qF "Good default" "$WORK/stderr" 2>/dev/null; then
-    echo "  [FAIL] must not contain stale 'Good default' phrasing"
-    FAILED=$((FAILED + 1))
-else
-    echo "  [PASS] must not contain stale 'Good default' phrasing"
-fi
+assert "question after the second plan's TaskCreate → block" "2" "$rc"
 echo ""
 
 echo "=== Summary: $FAILED failure(s) ==="
