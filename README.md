@@ -25,7 +25,7 @@ This fork integrates Claude Code-native features into the Superpowers workflow.
 | Subagent Model Routing | Opt-in per-task model tiers (`mechanical`/`standard`/`frontier`) route plan-execution subagents to cheaper models (see [Subagent Model Routing](#subagent-model-routing--optional-flow)) |
 | Configurable Commit Strategy | Opt-in `workflow.json` switches plan execution from per-task commits to a single commit at plan end (see [Commit Strategy](#commit-strategy)) |
 | Architecture Delta Map | Two-view Mermaid map of what a spec touches, shown before approval and redrawn from the git diff at branch finish (see [Architecture Delta Map](#architecture-delta-map)) |
-| Acceptance Criteria | Criteria from the design carry test names in the spec, become permanent tests in the project's suite, and are accepted one by one before the merge menu (see [Acceptance Criteria](#acceptance-criteria)) |
+| Acceptance Criteria | Criteria from the design carry test names in the spec, become permanent tests in the project's suite, and are accepted before the merge menu (see [Acceptance Criteria](#acceptance-criteria)) |
 
 ## Visual Comparison
 
