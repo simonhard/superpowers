@@ -85,6 +85,29 @@ section_hook() {
   lacks "$f" "SUPERPOWERS_HANDOFF_CTX_PCT"
 }
 
+section_writing_plans() {
+  local f=skills/writing-plans/SKILL.md handoff
+  has "$f" "$SENTENCE"
+  has "$f" "/clear, then:"
+  has "$f" "/superpowers-extended-cc:subagent-driven-development <absolute plan path>"
+  has "$f" "/superpowers-extended-cc:executing-plans <absolute plan path>"
+  has "$f" "parallelSession"
+  has "$f" "## Starting from a spec"
+  has "$f" "Ruling: <what> — <why>"
+  lacks "$f" "Subagent-Driven (this session)"
+  lacks "$f" "Parallel Session"
+  lacks "$f" "How would you like to execute"
+  lacks "$f" "manages its own completion flow via"
+  handoff="$(section_text "$f" "Execution Handoff")"
+  if [ -z "$handoff" ]; then
+    fail "$f has section '## Execution Handoff'"
+  else
+    pass "$f has section '## Execution Handoff'"
+    in_text_lacks "$f Execution Handoff" "$handoff" "AskUserQuestion:"
+    in_text_lacks "$f Execution Handoff" "$handoff" "Invoke the Skill tool"
+  fi
+}
+
 # --- dispatcher: every section_* function above is one section --------------
 
 names=()
