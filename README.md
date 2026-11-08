@@ -99,9 +99,9 @@ The optional features are documented in their own sections below.
 
 3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps. *Creates native tasks with dependencies.*
 
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or implements every task inline in the current session with one fresh review of the whole branch at the end (cheapest); it stops only at tasks the plan marks as user gates.
+4. **subagent-driven-development** or **executing-plans** - Activates with plan, in a new session. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or, opt-in through the routing file (`"parallelSession": "executing-plans"`), implements every task inline with one fresh review of the whole branch at the end (cheapest); it stops only at tasks the plan marks as user gates.
 
-   **Architect pattern (new):** when executing in a separate session, that session can message the plan-writing session via Claude Code's agent chat (`ListAgents` + `SendMessage`). The plan session acts as the architect and answers design questions, while executors work with a focused context. This makes `write-plan` useful for offloading side tasks from a long-running session without losing its knowledge.
+   **One phase, one session:** brainstorming and writing-plans each end with a handoff block: `/clear`, then one command that starts the next phase in a new session with the document's absolute path. Starting that session approves the spec or the plan; changes go to the session that wrote the document, which shows the block again. Execution runs subagent-driven-development by default and executing-plans only when the routing file sets `"parallelSession": "executing-plans"`.
 
 5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
 
@@ -209,7 +209,7 @@ Skills prose is not enforcement; agents skip instructions under load. So every l
 | **Session notice** (`session-start` hook) | Session start | Routing file detected → the tier rules and your mapping are injected into context. The agent starts the session already knowing the rules. |
 | **Plan gate** (`pre-taskcreate-model-tier` hook) | Every `TaskCreate` | A plan task without a valid `"modelTier"` in its `json:metadata` fence is blocked — including plan-shaped tasks (template headers or numbered subjects) that omit the fence entirely; the block message contains the full tier table, so the agent fixes and re-issues without reading anything. |
 | **Dispatch gate** (`pre-agent-model-routing` hook) | Every `Agent` dispatch | While tiered tasks are in progress, allows the union of the in-progress tasks' tier models plus the `standard` reviewer model; blocks anything else and names the correct dispatch per role. A concrete `"model"` pin in task metadata overrides the tier (pin enforcement: see [Recommended Configuration](#recommended-configuration)). |
-| **Handoff guard** (`pre-askuser-handoff-guard` hook) | After `writing-plans` creates tasks | When armed, allows `AskUserQuestion` only if it carries the two mandated options ("Subagent-Driven (this session)" / "Parallel Session (separate)") or marks itself as a mid-plan clarification with the literal token `CLARIFICATION` in the question. Blocks custom menus that bypass the execution-method choice and skip the subagent pipeline. |
+| **Handoff guard** (`pre-askuser-handoff-guard` hook) | After `writing-plans` creates tasks | When armed, blocks every `AskUserQuestion` whose question lacks the literal token `CLARIFICATION`. The block message is the handoff block itself: `/clear`, then one command that starts execution in a new session (executing-plans when the routing file sets `"parallelSession": "executing-plans"`, otherwise subagent-driven-development). |
 
 All three gates fail open (parse errors never brick a session) and share a kill switch: `SUPERPOWERS_ROUTING_GUARD=0`.
 
@@ -297,7 +297,7 @@ Before your human partner approves a spec, the spec ends with a two-view Mermaid
 - **verification-before-completion** - Ensure it's actually fixed
 
 **Collaboration**
-- **brainstorming** - Socratic design refinement + *native task creation*
+- **brainstorming** - Socratic design refinement + *handoff to a new planning session*
 - **writing-plans** - Detailed implementation plans + *native task dependencies*
 - **executing-plans** - Inline plan execution: one context, one final review, *resumable native tasks + user gates*
 - **dispatching-parallel-agents** - Concurrent subagent workflows

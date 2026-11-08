@@ -10,12 +10,13 @@ Superpowers has two distinct kinds of tests, each in its own directory:
 Live in `tests/`. Currently:
 
 - `tests/brainstorm-server/` — node test suite for the brainstorm server JS code.
-- `tests/claude-code/` — bash tests that invoke the Claude Code CLI headlessly to verify skill content and behavior. See `tests/claude-code/README.md` for structure and how to add tests. Includes `test-subagent-driven-development.sh`, `test-subagent-driven-development-integration.sh`, `test-worktree-native-preference.sh` (RED-GREEN-REFACTOR for the using-git-worktrees skill), `test-sdd-workspace.sh`, `test-fork-validation.sh`, `test-handoff-guard.sh`, `test-model-routing-hook.sh`, `test-taskcreate-tier-hook.sh`, `test-user-gate-hooks.sh`, and `test-worktree-path-policy.sh`.
+- `tests/claude-code/` — bash tests that invoke the Claude Code CLI headlessly to verify skill content and behavior. See `tests/claude-code/README.md` for structure and how to add tests. Includes `test-subagent-driven-development.sh`, `test-subagent-driven-development-integration.sh`, `test-worktree-native-preference.sh` (RED-GREEN-REFACTOR for the using-git-worktrees skill), `test-sdd-workspace.sh`, `test-fork-validation.sh`, `test-handoff-guard.sh`, `test-stop-deflection-guard.sh`, `test-model-routing-hook.sh`, `test-taskcreate-tier-hook.sh`, `test-user-gate-hooks.sh`, and `test-worktree-path-policy.sh`.
 - `tests/hooks/` — bash tests for hook scripts (e.g. `test-session-start.sh`).
 - `tests/explicit-skill-requests/` — Haiku-specific, multi-turn, and skill-name-prompted tests exercising explicit skill invocation.
 - `tests/shell-lint/` — bash test wrapping `scripts/lint-shell.sh`.
 - `tests/diagnosing-superpowers/test-skill-structure.sh` — structural checks for the diagnosing-superpowers skill (frontmatter, referenced files, leak scan, word budget); behavior-scenario eval records are kept by the maintainer outside the repo.
 - `tests/mapping-architecture-delta/` — `test-skill-structure.sh` (frontmatter, word budget, referenced files, template placeholders, leak scan) and `test-classify-diff.sh` (throwaway git repo exercising `scripts/classify-diff.sh`: add, modify, delete, rename, non-ASCII path, unmapped paths, no map file, exit codes).
+- `tests/session-handoff/test-handoff-structure.sh` — structural checks for the session handoff: brainstorming, writing-plans and the handoff guard carry the same handoff block, the execution skills take their start as the go, onboard asks how a new session executes a plan, no machine-specific paths in the changed files. Section names as arguments (`hook`, `writing-plans`, …) run one part.
 
 Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.
 

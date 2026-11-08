@@ -23,7 +23,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR" || exit 1
 
 QUIET=false
 [[ "${1:-}" == "--quiet" ]] && QUIET=true
@@ -40,6 +40,7 @@ SUITES=(
     test-taskcreate-commit-strategy-hook.sh
     test-user-gate-hooks.sh
     test-stop-wait-guard.sh
+    test-stop-deflection-guard.sh
 )
 
 # `timeout` is GNU coreutils; on macOS it arrives as gtimeout (or not at all).

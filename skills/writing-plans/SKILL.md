@@ -7,7 +7,7 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 ## CRITICAL CONSTRAINTS — Read Before Anything Else
 
-**You MUST NOT call `EnterPlanMode` or `ExitPlanMode` at any point during this skill.** This skill operates in normal mode and manages its own completion flow via `AskUserQuestion`. Calling `EnterPlanMode` traps the session in plan mode where Write/Edit are restricted. Calling `ExitPlanMode` breaks the workflow and skips the user's execution choice. If you feel the urge to call either, STOP — follow this skill's instructions instead.
+**You MUST NOT call `EnterPlanMode` or `ExitPlanMode` at any point during this skill.** This skill operates in normal mode and ends with the handoff block (see Execution Handoff). Calling `EnterPlanMode` traps the session in plan mode where Write/Edit are restricted. Calling `ExitPlanMode` breaks the workflow and skips the handoff. If you feel the urge to call either, STOP — follow this skill's instructions instead.
 
 ## Overview
 
@@ -21,6 +21,12 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
+
+## Starting from a spec
+
+Started with a spec path, that start is your human partner's approval of the spec: they reviewed it in the session that wrote it and started this one with its path. Do not ask whether the spec is approved; read it and plan. A path you cannot read (missing, mistyped, not a file): say so, name the path you got, and ask for the right one. Never plan from a guessed file, not even a near match. Started without a path, the requirements in the conversation are the input, as before.
+
+The session that wrote the spec is gone, so nobody can answer for it. Where the spec is silent or contradicts itself, decide, and write each decision as one line under **Global Constraints**: `Ruling: <what> — <why>`.
 
 ## Scope Check
 
@@ -41,7 +47,7 @@ This structure informs the task decomposition. Each task should produce self-con
 
 **BEFORE exploring code or writing the plan, you MUST:**
 
-1. Call `TaskList` to check for existing tasks from brainstorming
+1. Call `TaskList` to check for existing tasks (a resumed planning session may already have some)
 2. If tasks exist: you will enhance them with implementation details as you write the plan
 3. If no tasks: you will create them with `TaskCreate` as you write each plan task
 
@@ -208,50 +214,38 @@ Suppress entirely if no user-gate tasks were tagged. Do NOT turn this into an `A
 ## Execution Handoff
 
 <HARD-GATE>
-STOP. You are about to complete the plan. DO NOT call EnterPlanMode or ExitPlanMode. You MUST call AskUserQuestion below. Both are FORBIDDEN — EnterPlanMode traps the session, ExitPlanMode skips the user's execution choice.
+The plan is written. Your answer ends with the handoff block below: no AskUserQuestion, no "shall I start?", no execution skill invoked in this session unless your human partner explicitly asks to execute here (see the last bullets below). Do not call EnterPlanMode or ExitPlanMode.
 </HARD-GATE>
 
-Your ONLY permitted next action is calling `AskUserQuestion` with this EXACT structure:
+Execution always starts in a new session. Your human partner reviews the plan here, then starts that session with the command from the block; that start is their go for the plan and for the execution method.
 
-```yaml
-AskUserQuestion:
-  question: "Plan complete and saved to docs/superpowers/plans/<filename>.md. How would you like to execute it?"
-  header: "Execution"
-  options:
-    - label: "Subagent-Driven (this session)"
-      description: "Runs here: fresh subagent per task, spec and quality review after every task."
-    - label: "Parallel Session (separate)"
-      description: "You open a second session that runs subagent-driven-development with the same per-task review, while this one stays alive to answer its questions. Choose it when this session is nearly out of context."
-    - label: "Parallel Session, inline (separate)"
-      description: "You open a second session that implements every task itself, without subagents, with one review of the whole branch at the end. Fewest tokens, fewer bugs caught along the way. Choose it when the plan has no frontier tasks and a cheaper model should do the work."
+**Pick the command from the routing file.** Look for `docs/superpowers/model-routing.json` in the project, otherwise `~/.claude/superpowers/model-routing.json`; the first file found is the only one read.
+
+| Routing file | Command |
+|---|---|
+| sets `"parallelSession": "executing-plans"` | `/superpowers-extended-cc:executing-plans <absolute plan path>` |
+| anything else: no file, unreadable JSON, no key, any other value | `/superpowers-extended-cc:subagent-driven-development <absolute plan path>` |
+
+**End your answer with the handoff block.** Write its sentences in the language of the conversation, so a German conversation gets German sentences. `/clear, then:` and the command line are not sentences: they stay in English in every conversation, `/clear, then:` exactly as shown and the command line as the table above names it, with the plan's absolute path filled in:
+
+````text
+Plan written to `<plan path>`.
+
+Changes? Tell me here and I'll show this block again. Otherwise, starting the next session is your go.
+
+/clear, then:
+
 ```
-
-**Recommend one option:** append " (Recommended)" to the better fit's label (list it first) and prepend a one-line reason to its description. Default Subagent-Driven — the review loop is the point. Recommend Parallel Session only for a nearly-exhausted session; task count alone is never the reason. Cost is your human partner's reason, not yours: name it in the description, never in the recommendation. On a Fable/Opus session with no frontier tasks, add to the inline Parallel description which cheaper model fits (e.g. Sonnet); with frontier tasks, offer no cheaper model: the second session runs every task on the model it starts with. Never reword the base labels.
-
-**If you are about to call ExitPlanMode, STOP — call AskUserQuestion instead.**
-
-<HARD-GATE>
-STOP. The user has chosen an execution method. You MUST invoke the corresponding skill using the Skill tool NOW. Do NOT implement tasks yourself — do NOT read files, make edits, or update task statuses. Your ONLY permitted action is invoking the skill below.
-
-**If Subagent-Driven chosen:**
-Invoke the Skill tool: `superpowers-extended-cc:subagent-driven-development`
-- The skill handles everything: subagent dispatch, review, task tracking
-- You stay in this session as the coordinator
-- Do NOT start working on tasks directly
-
-**If Parallel Session chosen:**
-Output exactly this, placeholders filled in. The `>` quote is part of the output. Print nothing else.
-
-```markdown
-Paste this into a NEW session opened in the worktree:
-
-> /superpowers-extended-cc:subagent-driven-development <plan path> - the plan author session "<this session's title>" is still running; on any ambiguity or design question, find it with ListAgents and ask it via SendMessage before guessing.
+/superpowers-extended-cc:subagent-driven-development <absolute plan path>
 ```
+````
 
-**If Parallel Session, inline chosen:** the same output, with `/superpowers-extended-cc:executing-plans` as the command.
-
-A bare "run executing-plans" prompt loses the consultation link — the new session cannot know its author exists unless the prompt names it. Then stay available for its questions.
-</HARD-GATE>
+- `/clear, then:` is never translated: a German answer still reads `/clear, then:`, not `/clear, dann:`. Hooks recognise the handoff by that exact line.
+- Nothing comes after the code block, and the code block holds exactly one line. `/clear` stays above it as text: two slash commands in one prompt do not run.
+- Name no model, in the block or before it.
+- Changes requested here: make them, update the plan and its `.tasks.json`, re-run the self-review, and show the block again.
+- A bare "looks good" is not a request to execute here: show the block again. Only an explicit request to execute in this session lifts the handoff; then invoke the skill the table names.
+- The gate heads-up for user-gate tasks (see above) comes before the block.
 
 ---
 

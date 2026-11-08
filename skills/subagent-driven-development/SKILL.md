@@ -1,6 +1,6 @@
 ---
 name: subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session
+description: Use when executing an implementation plan with mostly independent tasks — the default execution skill, started in a new session with the plan's path
 ---
 
 # Subagent-Driven Development
@@ -12,6 +12,8 @@ Execute plan by dispatching fresh subagent per task, with two-stage review after
 **Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
 
 **Continuous execution:** Do not pause to check in with your human partner between tasks. Execute all tasks from the plan without stopping. The only reasons to stop are the four named below, or all tasks complete. "Should I continue?" prompts and progress summaries waste their time — they asked you to execute the plan, so execute it.
+
+**Started with a plan path, that start is the go:** your human partner approved the plan and this execution method by starting this session. Do not ask again.
 
 **Rulings, not stalls.** A running plan does not wait on a human. Conflicts,
 ambiguities, plan defects, a cap you would have asked to exceed — decide
@@ -33,22 +35,22 @@ stop and ask.
 digraph when_to_use {
     "Have implementation plan?" [shape=diamond];
     "Tasks mostly independent?" [shape=diamond];
-    "Stay in this session?" [shape=diamond];
+    "Routing file sets parallelSession: executing-plans?" [shape=diamond];
     "subagent-driven-development" [shape=box];
     "executing-plans" [shape=box];
     "Manual execution or brainstorm first" [shape=box];
 
     "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
     "Have implementation plan?" -> "Manual execution or brainstorm first" [label="no"];
-    "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
+    "Tasks mostly independent?" -> "Routing file sets parallelSession: executing-plans?" [label="yes"];
     "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
-    "Stay in this session?" -> "subagent-driven-development" [label="yes"];
-    "Stay in this session?" -> "executing-plans" [label="no - parallel session"];
+    "Routing file sets parallelSession: executing-plans?" -> "executing-plans" [label="yes"];
+    "Routing file sets parallelSession: executing-plans?" -> "subagent-driven-development" [label="no"];
 }
 ```
 
-**vs. Executing Plans (parallel session):**
-- Same session (no context switch)
+**vs. Executing Plans:**
+- The default; executing-plans runs only when the routing file asks for it
 - Fresh subagent per task (no context pollution)
 - Two-stage review after each task: spec compliance first, then code quality
 - Faster iteration (no human-in-loop between tasks)
