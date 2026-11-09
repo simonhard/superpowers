@@ -25,6 +25,7 @@ This fork integrates Claude Code-native features into the Superpowers workflow.
 | Subagent Model Routing | Opt-in per-task model tiers (`mechanical`/`standard`/`frontier`) route plan-execution subagents to cheaper models (see [Subagent Model Routing](#subagent-model-routing--optional-flow)) |
 | Configurable Commit Strategy | Opt-in `workflow.json` switches plan execution from per-task commits to a single commit at plan end (see [Commit Strategy](#commit-strategy)) |
 | Architecture Delta Map | Two-view Mermaid map of what a spec touches, shown before approval and redrawn from the git diff at branch finish (see [Architecture Delta Map](#architecture-delta-map)) |
+| Acceptance Criteria | Criteria from the design carry test names in the spec, become permanent tests in the project's suite, and are accepted before the merge menu (see [Acceptance Criteria](#acceptance-criteria)) |
 
 ## Visual Comparison
 
@@ -107,7 +108,7 @@ The optional features are documented in their own sections below.
 
 6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
 
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, shows the architecture delta and every acceptance criterion with its tests, waits for your acceptance, then presents options (merge/PR/keep/discard), cleans up worktree.
 
 **The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
 
@@ -283,6 +284,17 @@ Before your human partner approves a spec, the spec ends with a two-view Mermaid
 - **Two modes:** *planned* (from the spec's file list, called by `brainstorming` on the architectural path) and *actual* (from `scripts/classify-diff.sh --base <ref>`, called by `finishing-a-development-branch`).
 - **Display:** visual companion when its server is running, otherwise an artifact; the Mermaid source always lives in the spec.
 
+## Acceptance Criteria
+
+*Skill: `skills/tracing-acceptance-criteria/`.*
+
+Every implementation ends with a check against acceptance criteria your human partner accepts. The criteria are written while the design is made, from the view of whoever uses the result, each with a Given/When/Then example. The spec names the tests for each one; the plan writes each of those tests as the first, failing test of the task that builds the behaviour; they stay in the project's own test suite.
+
+- **Format:** a table behind the marker `<!-- acceptance-criteria -->` with five columns: ID, criterion, origin (your partner or proposal), level (`API`, `UI`, `CLI`, `unit`, `manual`), test names in backticks.
+- **Two modes:** *define* (called by `brainstorming`: the criteria are presented as their own design section before the spec is written) and *trace* (called by `finishing-a-development-branch`, or on request: `scripts/trace-acceptance.sh --spec <spec> --base <ref>` finds every named test with file and line, and reports missing tests, skipped tests and new tests without criterion).
+- **Acceptance:** before the merge/PR menu, the finishing step shows the overview and asks; a rejected or added criterion is reworked on the branch, test first, and shown again. A spec without criteria finishes as before, with one sentence saying so.
+- **Reviews:** the per-task reviewer and the final code reviewer flag a test that has the right name but checks its criterion from the inside.
+
 ---
 
 ## What's Inside
@@ -306,6 +318,7 @@ Before your human partner approves a spec, the spec ends with a two-view Mermaid
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
 - **mapping-architecture-delta** - Two-view architecture delta map: planned before the go, redrawn from the git diff at branch finish
+- **tracing-acceptance-criteria** - Acceptance criteria with test names in the spec; overview of criterion → tests before the merge
 - **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
 
 **User-Thrown Gates** (optional flow, see "User-Thrown Gate Enforcement" above)

@@ -86,6 +86,19 @@ Subagent (general-purpose):
     - Integration tests where they matter?
     - All tests passing?
 
+    **Acceptance tests** (when the plan's `Spec:` line names a spec with a
+    table behind `<!-- acceptance-criteria -->`): for every test name in
+    that table, except rows of level `manual`, check:
+    1. A test with exactly this name exists on the branch.
+    2. It checks the behaviour from the outside, at the row's level: API
+       by calling the interface, UI through the page, CLI by running the
+       command, unit through the unit's public entry point. A direct call
+       of an internal helper does not count.
+    3. Its assertions check the criterion's "Then", with the values from
+       its example in the spec.
+    4. It is not skipped.
+    A violation is Important and names the criterion's ID.
+
     **Production readiness:**
     - Migration strategy if schema changed?
     - Backward compatibility considered?

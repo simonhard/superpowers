@@ -24,8 +24,10 @@ recognize and correct, grounded in what they want to accomplish.
    requirements does not ask them to authorize the task again.
 2. **Write back your understanding.** Summarize the intended outcome,
    relevant constraints, and success criteria in a short note your partner
-   can assess. Separate what they said from assumptions. Invite correction
-   and incorporate their answer before treating this as the design brief.
+   can assess. Separate what they said from assumptions. Criteria your
+   partner already names are acceptance criteria: note them verbatim.
+   Invite correction and incorporate their answer before treating this as
+   the design brief.
 3. **Carry intent into the design.** Preserve the agreed understanding in
    the selected path's design artifact: the written spec for architectural
    work, or the in-chat design/probe for bounded work and spikes. Check
@@ -113,6 +115,8 @@ complete that path's reviews before implementation.
 | "They approved the spike, so the follow-up change is approved too" | Each task gets its own classification and its own approval. |
 | "The spec lists every file — a map adds nothing" | Your human partner approves blocks and their connections, not a file list. The map is what they approve. |
 | "They said it looks good — I'll start the plan right here" | Starting the next session is the go. Show the block again. |
+| "They named no criteria, so there are none" | Write them yourself, marked as proposal. |
+| "I'll phrase their criterion a little more precisely" | Their wording stays. Your precision is a proposal of its own. |
 
 ## Checklist
 
@@ -129,9 +133,9 @@ your path and complete them in order.
 **Bounded:**
 1. **Explore project context** — check files, docs, recent commits
 2. **Ask clarifying questions** — one at a time, the ones that matter
-3. **Present short design in chat** — approach, files touched, testing
+3. **Present short design in chat** — approach, files touched, acceptance criteria with test names, testing
 4. **Get approval** — STOP and wait for an explicit yes; presenting the design and starting in the same breath is skipping the gate
-5. **Implement** — proceed with the normal development workflow (TDD applies); no plan document
+5. **Implement** — proceed with the normal development workflow (TDD applies); no plan document; at the end, list each criterion → test name → file
 
 **Architectural:**
 1. **Explore project context** — check files, docs, recent commits
@@ -139,10 +143,11 @@ your path and complete them in order.
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — the spec ends with an **Architecture Delta** section drawn with the mapping-architecture-delta skill (planned mode); save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
-7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope, delta check (see below)
-8. **User reviews written spec** — the architecture delta is on screen (or, without a display, in the spec's last section); ask your human partner to review the spec file and the map before proceeding
-9. **Hand off to a new session** — end with the handoff block; never invoke writing-plans in this session
+6. **Present acceptance criteria** — their own design section, written with the tracing-acceptance-criteria skill (define mode); your partner adds and strikes; then the spec
+7. **Write design doc** — the spec carries the acceptance criteria and ends with an **Architecture Delta** section drawn with the mapping-architecture-delta skill (planned mode); save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
+8. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope, delta check, criteria check (see below)
+9. **User reviews written spec** — the architecture delta is on screen (or, without a display, in the spec's last section); ask your human partner to review the spec file, its acceptance criteria and the map before proceeding
+10. **Hand off to a new session** — end with the handoff block; never invoke writing-plans in this session
 
 ## Process Flow
 
@@ -160,6 +165,7 @@ digraph brainstorming {
     "Propose 2-3 approaches" [shape=box];
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
+    "Present acceptance criteria" [shape=box];
     "Write design doc\n+ architecture delta" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
     "Ask for review, end with handoff block" [shape=box];
@@ -181,7 +187,8 @@ digraph brainstorming {
     "Propose 2-3 approaches" -> "Present design sections";
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc\n+ architecture delta" [label="yes"];
+    "User approves design?" -> "Present acceptance criteria" [label="yes"];
+    "Present acceptance criteria" -> "Write design doc\n+ architecture delta";
     "Write design doc\n+ architecture delta" -> "Spec self-review\n(fix inline)";
     "Spec self-review\n(fix inline)" -> "Ask for review, end with handoff block";
     "Ask for review, end with handoff block" -> "Changes requested in this session?";
@@ -258,6 +265,16 @@ is the whole process.
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
+**Acceptance Criteria:**
+
+Before the spec is written, present the acceptance criteria as their own
+design section, written with the tracing-acceptance-criteria skill in define
+mode, and take in what your partner adds or strikes. The spec then carries
+them: the table behind the `<!-- acceptance-criteria -->` marker, one
+Given/When/Then example per criterion, one line "Not part of this". The
+section stands before the Architecture Delta. Criteria your partner gave stay
+verbatim.
+
 **Architecture Delta:**
 
 The spec ends with a section **Architecture Delta**, drawn with the
@@ -276,6 +293,7 @@ After writing the spec document, look at it with fresh eyes:
 3. **Scope check:** Is this focused enough for a single implementation plan, or does it need decomposition?
 4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
 5. **Delta check:** Every file and block the spec names appears in the Architecture Delta map, and the counts row matches the spec's file list. Fix the map or the list.
+6. **Criteria check:** Every row of the criteria table has an origin, a level, at least one test name or the level `manual`, and an example; no criterion text names a file, class, function or variable; your partner's criteria are verbatim.
 
 Fix any issues inline. No need to re-review — just fix and move on.
 
@@ -283,7 +301,7 @@ Fix any issues inline. No need to re-review — just fix and move on.
 After the spec review loop passes, end your answer with the handoff block. Its first line asks for the review:
 
 ````text
-Spec written and committed to `<spec path>`; the architecture delta is on screen (companion/artifact) — or, without either, in the spec's last section. Please review both.
+Spec written and committed to `<spec path>`; the acceptance criteria are in section <n>, the architecture delta is on screen (companion/artifact) — or, without either, in the spec's last section. Please review the spec, its criteria and the map.
 
 Changes? Tell me here and I'll show this block again. Otherwise, starting the next session is your go.
 

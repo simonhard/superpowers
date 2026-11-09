@@ -28,6 +28,8 @@ Started with a spec path, that start is your human partner's approval of the spe
 
 The session that wrote the spec is gone, so nobody can answer for it. Where the spec is silent or contradicts itself, decide, and write each decision as one line under **Global Constraints**: `Ruling: <what> — <why>`.
 
+**Acceptance criteria.** When the spec has the table behind `<!-- acceptance-criteria -->`, every test name in it is written as the first, failing test of the task that builds the behaviour: its code goes in that task's first step, at the table's level and from the outside (API through the interface, UI through the page, CLI through the command, unit through the unit's public entry point), with the values from the criterion's example. The names in the spec are binding. An extra or changed name gets a `Ruling:` line, and the task that writes it updates the spec's table. No separate "tests first" task: the suite stays green after every task, and each test is still fixed before its code exists.
+
 ## Scope Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
@@ -132,6 +134,9 @@ If the plan schedules questions for the user (a DECIDE list, an AskUserQuestion 
 - [ ] [Concrete, testable criterion]
 - [ ] [Another criterion]
 
+**Acceptance tests:** *(only when the spec has acceptance criteria)*
+- AC-1 [criterion sentence from the spec] → `[testName]` ([level])
+
 **Verify:** `exact test command` → expected output
 
 **Steps:**
@@ -169,6 +174,8 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
+**Acceptance tests** lists the spec's test names this task writes, one line each; leave the field out when the task writes none. Like the other sections, it goes verbatim into the TaskCreate description.
+
 ## No Placeholders
 
 Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
@@ -190,6 +197,8 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
 **4. Review Focus:** For each input class or failure mode the spec implies, is there a task whose tests exercise it? The five uncovered ones most likely to bite a person go in the Review Focus section, and each line there gets its test added to the owning task. An empty section means you checked and found none, not that you skipped the check.
+
+**5. Acceptance coverage:** Every test name in the spec's acceptance-criteria table appears in exactly one task under **Acceptance tests** and in the test code of that task's first step. Every `manual` criterion names the task whose result your human partner checks.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
